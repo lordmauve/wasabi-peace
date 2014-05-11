@@ -3,7 +3,7 @@ from pyglet.window import key
 from pyglet.event import EventDispatcher, EVENT_HANDLED
 
 
-from euclid import Point3
+from euclid import Point3, Vector3
 
 from wasabisg.plane import Plane
 from wasabisg.scenegraph import Camera, Scene, v3, ModelNode
@@ -35,9 +35,12 @@ class World(EventDispatcher):
             width=WIDTH,
             height=HEIGHT
         )
+        self.t = 0
 
     def update(self, dt):
         """Update the world through the given time step (in seconds)."""
+        self.t += dt
+        self.ship.rotation = (10 * self.t, 0, 1, 0)
 
     def create_scene(self):
         """Initialise the scene with static objects."""
@@ -46,7 +49,7 @@ class World(EventDispatcher):
         )
         # Sun
         self.scene.add(Sunlight(
-            direction=(1, 1, 1),
+            direction=Vector3(0.82, 0.31, 0.48),
             colour=(1.0, 0.8, 0.5, 1.0),
             intensity=3,
         ))
@@ -66,8 +69,8 @@ class World(EventDispatcher):
         )
 
         # Ship, created statically for now
-        ship = ModelNode(ship_model, pos=(0, 0, 0))
-        self.scene.add(ship)
+        self.ship = ModelNode(ship_model, pos=(0, 0, 0))
+        self.scene.add(self.ship)
 
     def draw(self):
         self.scene.render(self.camera)
