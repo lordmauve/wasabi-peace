@@ -3,12 +3,12 @@ from pyglet.window import key
 from pyglet.event import EventDispatcher, EVENT_HANDLED
 
 
-from euclid import Point3, Vector3
+from euclid import Point3, Vector3, Quaternion
 
 from wasabisg.plane import Plane
 from wasabisg.scenegraph import Camera, Scene, v3, ModelNode
 from wasabisg.loaders.objloader import ObjFileLoader
-from wasabisg.model import Material
+from wasabisg.model import Material, Model
 from wasabisg.lighting import Sunlight
 from sound import Music
 
@@ -26,7 +26,24 @@ model_loader = ObjFileLoader()
 ship_model = model_loader.load_obj('assets/models/ship.obj')
 skydome = model_loader.load_obj('assets/models/skydome.obj')
 
-# Test
+
+class Ship(object):
+    def __init__(self):
+        self.model = ModelNode(ship_model)
+
+        self.pos = Point3(0, 0, 0)
+        self.angle = 0
+        self.speed = 1
+
+    def update(self, dt):
+        q = Quaternion.new_rotate_axis(self.angle, Vector3(1, 0, 0))
+        v = q * Vector3(0, 0, 1) * self.speed * dt
+
+        self.pos += v
+
+        self.model.rotation = (self.angle, 0, 1, 0)
+        self.model.pos = self.pos
+
 
 class World(EventDispatcher):
     def __init__(self):
@@ -34,17 +51,25 @@ class World(EventDispatcher):
 
         self.create_scene()
         self.camera = Camera(
-            pos=Point3(10, 10, 10),  # x, y (height), z
+            pos=Point3(10, 5, 10),
             look_at=Point3(0, 1, 0),
             width=WIDTH,
             height=HEIGHT
         )
-        self.t = 0
+
+    def spawn(self, obj):
+        self.objects.append(obj)
+        try:
+            model = obj.model
+        except AttributeError:
+            pass
+        else:
+            self.scene.add(model)
 
     def update(self, dt):
         """Update the world through the given time step (in seconds)."""
-        self.t += dt
-        self.ship.rotation = (10 * self.t, 0, 1, 0)
+        for o in self.objects:
+            o.update(dt)
 
     def create_scene(self):
         """Initialise the scene with static objects."""
@@ -62,24 +87,27 @@ class World(EventDispatcher):
         ))
 
         # Sky dome
-        self.scene.add(skydome)
+        self.skydome = ModelNode(skydome)
+        self.scene.add(self.skydome)
 
         # Sea
-        self.scene.add(
-            Plane(
-                size=1000,
-                material=Material(
-                    name='sea',
-                    Kd=(0.2, 0.4, 0.6)
+        self.sea = ModelNode(
+            Model(meshes=[
+                Plane(
+                    size=1000,
+                    material=Material(
+                        name='sea',
+                        Kd=(0.2, 0.4, 0.6)
+                    )
                 )
-            )
+            ])
         )
-
-        # Ship, created statically for now
-        self.ship = ModelNode(ship_model, pos=(0, 0, 0))
-        self.scene.add(self.ship)
+        self.scene.add(self.sea)
 
     def draw(self):
+        x, _, z = self.camera.pos
+        self.skydome.pos = Point3(x, 0, z)
+        self.sea.pos = Point3(x, 0, z)
         self.scene.render(self.camera)
 
 
@@ -88,6 +116,9 @@ class GameState(object):
         self.game = game
         self.window = game.window
         self.world = World()
+
+        self.ship = Ship()
+        self.world.spawn(self.ship)
 
     def start(self):
         pyglet.clock.schedule_interval(self.update, 1.0 / FPS)
@@ -101,6 +132,7 @@ class GameState(object):
 
     def update(self, dt):
         self.world.update(dt)
+        self.world.camera.look_at = self.ship.pos
 
 
 class Game(object):
