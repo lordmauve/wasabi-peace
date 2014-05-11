@@ -5,3 +5,5 @@ syntax: glob
 *~
 build/*
 dist/*
+.idea/*
+.python-version
