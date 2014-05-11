@@ -21,7 +21,7 @@ FPS = 60
 model_loader = ObjFileLoader()
 ship_model = model_loader.load_obj('assets/models/ship.obj')
 
-
+# Test
 
 class World(EventDispatcher):
     def __init__(self):
