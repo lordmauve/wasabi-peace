@@ -15,6 +15,7 @@ class Music(pyglet.media.Player):
         self.songs = cycle(songs)
 
     def on_eos(self):
+        """Ensure that the sound queue is looped."""
         super(Music, self).on_eos()
         self.queue(pyglet.resource.media(self.songs.next()))
         self.play()
