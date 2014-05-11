@@ -13,8 +13,14 @@ from wasabisg.lighting import Sunlight
 from sound import Music
 
 
-pyglet.resource.path += ['assets', 'assets/sounds', 'assets/textures']
-
+pyglet.resource.path += [
+    'assets/sounds',
+    'assets/textures',
+    'assets/sprites',
+    'assets/fonts'
+]
+pyglet.resource.reindex()
+pyglet.resource.add_font('benegraphic.ttf')
 
 WIDTH = 1024
 HEIGHT = 600
@@ -73,9 +79,6 @@ class World(EventDispatcher):
 
     def create_scene(self):
         """Initialise the scene with static objects."""
-        music = Music(['battletrack.mp3'])
-        # music.play()
-
         self.scene = Scene(
             ambient=(0.1, 0.15, 0.2, 1.0),
         )
@@ -111,7 +114,8 @@ class World(EventDispatcher):
         self.scene.render(self.camera)
 
 
-class GameState(object):
+class BattleMode(object):
+    """Sailing on the open ocean!"""
     def __init__(self, game):
         self.game = game
         self.window = game.window
@@ -120,8 +124,21 @@ class GameState(object):
         self.ship = Ship()
         self.world.spawn(self.ship)
 
+        self.key_timer = {
+            key.A: pyglet.clock.Clock(),
+            key.W: pyglet.clock.Clock(),
+            key.S: pyglet.clock.Clock(),
+            key.D: pyglet.clock.Clock(),
+        }
+
     def start(self):
         pyglet.clock.schedule_interval(self.update, 1.0 / FPS)
+        self.window.push_handlers(
+            self.on_key_press,
+            self.on_key_release
+        )
+        music = Music(['battletrack.mp3'])
+        # music.play()
 
     def stop(self):
         self.window.pop_handlers()
@@ -134,30 +151,9 @@ class GameState(object):
         self.world.update(dt)
         self.world.camera.look_at = self.ship.pos
 
-
-class Game(object):
-    def __init__(self, windowed):
-        global WIDTH, HEIGHT
-        if windowed:
-            self.window = pyglet.window.Window(
-                width=WIDTH,
-                height=HEIGHT
-            )
-        else:
-            self.window = pyglet.window.Window(fullscreen=True)
-            WIDTH = self.window.width
-            HEIGHT = self.window.height
-        self.gamestate = GameState(self)
-        self.gamestate.start()
-        self.window.push_handlers(self.on_draw, self.on_key_press, self.on_key_release)
-        self.key_timer = {key.A: pyglet.clock.Clock(),
-                          key.W: pyglet.clock.Clock(),
-                          key.S: pyglet.clock.Clock(),
-                          key.D: pyglet.clock.Clock(),
-                          }
-
     def on_key_press(self, symbol, modifiers):
-        if not symbol in self.key_timer: return
+        if not symbol in self.key_timer:
+            return
         self.key_timer[symbol].update_time()
         if symbol == key.A:
             print 'A key was pressed'
@@ -169,7 +165,8 @@ class Game(object):
             print 'S key was pressed'
 
     def on_key_release(self, symbol, modifiers):
-        if not symbol in self.key_timer: return
+        if not symbol in self.key_timer:
+            return
         held = self.key_timer[symbol].update_time()
         if symbol == key.A:
             if held < 1.0:
@@ -226,10 +223,33 @@ class Game(object):
                 print 'medium speed decrease'
                 pass
             else:
-                # TODO - sound event "Drop the anchor!"
+                # TODO - sound event "All stop!"
                 print 'hard speed decrease'
                 pass
             print 'W key was released, held %r' % held
+
+
+class Game(object):
+    """Entry point to the game, which allows switching between game states.
+
+    Game states implement one mechanic, so a menu screen might be a game
+    state, for example.
+
+    """
+    def __init__(self, windowed):
+        global WIDTH, HEIGHT
+        if windowed:
+            self.window = pyglet.window.Window(
+                width=WIDTH,
+                height=HEIGHT
+            )
+        else:
+            self.window = pyglet.window.Window(fullscreen=True)
+            WIDTH = self.window.width
+            HEIGHT = self.window.height
+        self.window.push_handlers(self.on_draw)
+        self.gamestate = BattleMode(self)
+        self.gamestate.start()
 
     def on_draw(self):
         self.gamestate.draw()
@@ -238,7 +258,11 @@ class Game(object):
 def main():
     from optparse import OptionParser
     parser = OptionParser('%prog [-f]')
-    parser.add_option('-f', '--fullscreen', action='store_true', help='Start in full screen mode')
+    parser.add_option(
+        '-f', '--fullscreen',
+        action='store_true',
+        help='Start in full screen mode'
+    )
 
     options, args = parser.parse_args()
 
