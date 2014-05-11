@@ -1,25 +1,20 @@
 import pyglet
+from itertools import cycle
 
 
-class Sound(pyglet.media.Player):
-    def __init__(self, sounds):
-        """The sound object will load a list of sounds into memory, ready for playing."""
+class Music(pyglet.media.Player):
+    def __init__(self, songs):
+        """The Music object will load keep a playlist of song, looping through them when played."""
 
-        self.player = pyglet.media.Player()
-        self.sounds = {}
-        self.playlist = []
+        super(Music, self).__init__()
 
-        for sound in sounds:
-            self.sounds[sound] = pyglet.resource.media(sound, streaming=False)
+        for song in songs:
+            song = pyglet.resource.media(song)
+            self.queue(song)
 
-    def set_playlist(self, sounds):
-        """Create a playlist for looping a group of sounds."""
-        for sound in sounds:
-            self.player.queue(self.sounds[sound])
+        self.songs = cycle(songs)
 
-    def play_playlist(self):
-        """Plays songs in the playlist, looping throug them."""
-        self.player.play()
-
-    def play_sound(self, sound):
-        self.sounds[sound].play()
+    def on_eos(self):
+        super(Music, self).on_eos()
+        self.queue(pyglet.resource.media(self.songs.next()))
+        self.play()

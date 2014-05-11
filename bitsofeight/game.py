@@ -10,7 +10,7 @@ from wasabisg.scenegraph import Camera, Scene, v3, ModelNode
 from wasabisg.loaders.objloader import ObjFileLoader
 from wasabisg.model import Material
 from wasabisg.lighting import Sunlight
-from sound import Sound
+from sound import Music
 
 
 pyglet.resource.path += ['assets', 'assets/sounds', 'assets/textures']
@@ -48,8 +48,8 @@ class World(EventDispatcher):
 
     def create_scene(self):
         """Initialise the scene with static objects."""
-        sound = Sound(['battletrack.mp3'])
-        sound.set_playlist(['battletrack.mp3'])
+        music = Music(['battletrack.mp3'])
+        music.play()
 
         self.scene = Scene(
             ambient=(0.1, 0.15, 0.2, 1.0),
@@ -78,8 +78,6 @@ class World(EventDispatcher):
         # Ship, created statically for now
         self.ship = ModelNode(ship_model, pos=(0, 0, 0))
         self.scene.add(self.ship)
-
-        sound.play_playlist()
 
     def draw(self):
         self.scene.render(self.camera)
