@@ -34,7 +34,7 @@ class World(EventDispatcher):
 
         self.create_scene()
         self.camera = Camera(
-            pos=Point3(10, 2, 10),
+            pos=Point3(10, 10, 10),  # x, y (height), z
             look_at=Point3(0, 1, 0),
             width=WIDTH,
             height=HEIGHT
@@ -117,7 +117,53 @@ class Game(object):
             HEIGHT = self.window.height
         self.gamestate = GameState(self)
         self.gamestate.start()
-        self.window.push_handlers(self.on_draw)
+        self.window.push_handlers(self.on_draw, self.on_key_press, self.on_key_release)
+        self.key_timer = {key.A: pyglet.clock.Clock(),
+                          key.W: pyglet.clock.Clock(),
+                          key.S: pyglet.clock.Clock(),
+                          key.D: pyglet.clock.Clock(),
+                          }
+
+    def on_key_press(self, symbol, modifiers):
+        if not symbol in self.key_timer: return
+        self.key_timer[symbol].update_time()
+        if symbol == key.A:
+            print 'A key was pressed'
+        if symbol == key.D:
+            print 'D key was pressed'
+
+    def on_key_release(self, symbol, modifiers):
+        if not symbol in self.key_timer: return
+        held = self.key_timer[symbol].update_time()
+        if symbol == key.A:
+            if held < 1.0:
+                # TODO - sound event "A little to port!"
+                print 'light left turn'
+                pass
+            elif held < 2.0:
+                # TODO - sound event "Turn to port!"
+                print 'medium left turn'
+                pass
+            else:
+                print 'hard left turn'
+                # TODO - sound event "Hard to port!"
+                pass
+            print 'A key was released, held %r' % held
+
+        if symbol == key.D:
+            if held < 1.0:
+                # TODO - sound event "A little to starboard!"
+                print 'light right turn'
+                pass
+            elif held < 2.0:
+                # TODO - sound event "Turn to starb'd!"
+                print 'medium right turn'
+                pass
+            else:
+                print 'hard right turn'
+                # TODO - sound event "Hard to starb'd!"
+                pass
+            print 'D key was released, held %r' % held
 
     def on_draw(self):
         self.gamestate.draw()
