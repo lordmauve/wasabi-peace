@@ -114,6 +114,102 @@ class World(EventDispatcher):
         self.scene.render(self.camera)
 
 
+class KeyControls(object):
+    """Process events from keys, and turn them into orders."""
+    LOW = 0.2
+    MEDIUM = 0.5
+    HARD = 0.8
+
+    def turn_left(self, held):
+        if held < self.LOW:
+            # TODO - sound event "A little to port!"
+            print 'light left turn'
+            pass
+        elif held < self.MEDIUM:
+            # TODO - sound event "Turn to port!"
+            print 'medium left turn'
+            pass
+        else:
+            print 'hard left turn'
+            # TODO - sound event "Hard to port!"
+            pass
+
+    def turn_right(self, held):
+        if held < self.LOW:
+            # TODO - sound event "A little to starboard!"
+            print 'light right turn'
+            pass
+        elif held < self.MEDIUM:
+            # TODO - sound event "Turn to starb'd!"
+            print 'medium right turn'
+            pass
+        else:
+            print 'hard right turn'
+            # TODO - sound event "Hard to starb'd!"
+            pass
+
+    def speed_up(self, held):
+        if held < self.LOW:
+            # TODO - sound event "A touch more sail!"
+            print 'small speed increase'
+            pass
+        elif held < self.MEDIUM:
+            # TODO - sound event "More sail!"
+            print 'medium speed increase'
+            pass
+        else:
+            # TODO - sound event "Unfurl the mails'l!"
+            print 'hard speed increase'
+            pass
+
+    def slow_down(self, held):
+        if held < self.LOW:
+            # TODO - sound event "Ease off the sail!"
+            print 'small speed decrease'
+            pass
+        elif held < self.MEDIUM:
+            # TODO - sound event "Ease off the mains'l!"
+            print 'medium speed decrease'
+            pass
+        else:
+            # TODO - sound event "All stop!"
+            print 'hard speed decrease'
+            pass
+
+    def __init__(self):
+        self.bindings = {
+            key.A: self.turn_left,
+            key.D: self.turn_right,
+            key.W: self.speed_up,
+            key.S: self.slow_down
+        }
+        self.key_timer = {}
+        self.t = 0
+
+    def update(self, dt):
+        self.t += dt
+
+    def on_key_press(self, symbol, modifiers):
+        if symbol not in self.bindings:
+            return
+        self.key_timer[symbol] = self.t
+
+    def on_key_release(self, symbol, modifiers):
+        try:
+            func = self.bindings[symbol]
+        except KeyError:
+            pass
+        else:
+            held = self.t - self.key_timer[symbol]
+            func(held)
+
+    def push_handlers(self, window):
+        window.push_handlers(
+            self.on_key_press,
+            self.on_key_release
+        )
+
+
 class BattleMode(object):
     """Sailing on the open ocean!"""
     def __init__(self, game):
@@ -123,21 +219,14 @@ class BattleMode(object):
 
         self.ship = Ship()
         self.world.spawn(self.ship)
-
-        self.key_timer = {
-            key.A: pyglet.clock.Clock(),
-            key.W: pyglet.clock.Clock(),
-            key.S: pyglet.clock.Clock(),
-            key.D: pyglet.clock.Clock(),
-        }
+        self.keys = KeyControls()
 
     def start(self):
         pyglet.clock.schedule_interval(self.update, 1.0 / FPS)
-        self.window.push_handlers(
-            self.on_key_press,
-            self.on_key_release
-        )
+
+        self.keys.push_handlers(self.window)
         music = Music(['battletrack.mp3'])
+        self.t = 0
         # music.play()
 
     def stop(self):
@@ -148,85 +237,10 @@ class BattleMode(object):
         self.world.draw()
 
     def update(self, dt):
+        self.keys.update(dt)
         self.world.update(dt)
         self.world.camera.look_at = self.ship.pos
-
-    def on_key_press(self, symbol, modifiers):
-        if not symbol in self.key_timer:
-            return
-        self.key_timer[symbol].update_time()
-        if symbol == key.A:
-            print 'A key was pressed'
-        if symbol == key.D:
-            print 'D key was pressed'
-        if symbol == key.W:
-            print 'W key was pressed'
-        if symbol == key.S:
-            print 'S key was pressed'
-
-    def on_key_release(self, symbol, modifiers):
-        if not symbol in self.key_timer:
-            return
-        held = self.key_timer[symbol].update_time()
-        if symbol == key.A:
-            if held < 1.0:
-                # TODO - sound event "A little to port!"
-                print 'light left turn'
-                pass
-            elif held < 2.0:
-                # TODO - sound event "Turn to port!"
-                print 'medium left turn'
-                pass
-            else:
-                print 'hard left turn'
-                # TODO - sound event "Hard to port!"
-                pass
-            print 'A key was released, held %r' % held
-
-        if symbol == key.D:
-            if held < 1.0:
-                # TODO - sound event "A little to starboard!"
-                print 'light right turn'
-                pass
-            elif held < 2.0:
-                # TODO - sound event "Turn to starb'd!"
-                print 'medium right turn'
-                pass
-            else:
-                print 'hard right turn'
-                # TODO - sound event "Hard to starb'd!"
-                pass
-            print 'D key was released, held %r' % held
-
-        if symbol == key.W:
-            if held < 1.0:
-                # TODO - sound event "A touch more sail!"
-                print 'small speed increase'
-                pass
-            elif held < 2.0:
-                # TODO - sound event "More sail!"
-                print 'medium speed increase'
-                pass
-            else:
-                # TODO - sound event "Unfurl the mails'l!"
-                print 'hard speed increase'
-                pass
-            print 'W key was released, held %r' % held
-
-        if symbol == key.S:
-            if held < 1.0:
-                # TODO - sound event "Ease off the sail!"
-                print 'small speed decrease'
-                pass
-            elif held < 2.0:
-                # TODO - sound event "Ease off the mains'l!"
-                print 'medium speed decrease'
-                pass
-            else:
-                # TODO - sound event "All stop!"
-                print 'hard speed decrease'
-                pass
-            print 'W key was released, held %r' % held
+        self.t += dt
 
 
 class Game(object):
