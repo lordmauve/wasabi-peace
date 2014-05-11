@@ -13,7 +13,7 @@ const float kFresnelPower = 5.0;
 const vec4 kAmbientColour  = vec4(0.0, 0.53, 1.0 , 1.0);
 const vec4 kSpecularColour = vec4(1.0, 1.0, 1.0,  1.0);
 const vec4 kDiffuseColour = vec4(0.4, 0.8, 0.95, 1.0);
-const vec4 kFogColour = vec4(1, 1, 1 ,1);
+const vec4 kFogColour = vec4(1.0, 1.0, 1.0 ,1.0);
 const vec4 kClearColour = vec4(0.0, 0.49, 1.0 ,1.0);
 // Input for Beer's law (light attenuation through water - this is made up)
 const float absorptionCoefficient = pow(7.0,-3.0);
@@ -57,9 +57,7 @@ void main()
     // Distance from the eye to surface point
     float eyeDistance = distance(eyePosition,worldPosition);
     // Refracted eye ray through ocean surface
-    vec3 vRefract = refract(vEyeDirection,
-                            surfaceNormal,
-                            kAir2Water);
+    vec3 vRefract = refract(vEyeDirection, surfaceNormal, kAir2Water);
 
     // Calculate the distance along the Refraction ray from the ocean surface
     // to the interception point on the ocean floor.
@@ -71,48 +69,38 @@ void main()
     // If the ray strikes the ocean floor sample the floor texture, otherwise
     // return the 'out of bounds' color - in this case the glclearcolour
     vec4 refractedColour = textureCube(cubemap, vRefract);
-    vec4 reflectedColour = textureCube(
-                                cubemap,
-                                reflect(vEyeDirection, surfaceNormal)
-                           );
+    vec4 reflectedColour = textureCube(cubemap, reflect(vEyeDirection, surfaceNormal));
     
-    if ((vIntercept.x < tileCount.x) && (vIntercept.x > 0) &&
-        (vIntercept.z < tileCount.y) && (vIntercept.z > 0)) {
-        refractedColour = texture2D(texture, vIntercept.zx) + 
-                          texture2D(caustics, vIntercept.zx);
-    }
+    if ((vIntercept.x < tileCount.x) && (vIntercept.x > 0.0) &&
+        (vIntercept.z < tileCount.y) && (vIntercept.z > 0.0))
+        refractedColour = texture2D(texture, vIntercept.zx);
     
     // Apply ambient, emissive, diffuse and specular terms to the surface
     
     // Calculate transmitted light absorbtion using Beer's law
     // Note: This has been hacked slightly to factor in distance from the 
     // viewer to create an attenuation effect on distant water patches.
-    vec4 absorbtion = exp(-absorptionCoefficient * (2*distance+(2*eyeDistance)));
+    vec4 absorbtion = exp(-absorptionCoefficient * (2.0*distance+(2.0*eyeDistance)));
     // Apply the transmitted light absorbtion
     refractedColour *= absorbtion;
     
     // Calculate the fresnel term for mixing between reflected and refracted
     // light on the water's surface
-    float fresnel = max(0,
-                       min(1,
-                         kFresnelBias +
-                         kFresnelScale *
-                         pow(1 + dot(vEyeDirection,surfaceNormal),kFresnelPower)
-                       )
-                    );
+    float fresnel = clamp(kFresnelBias +
+         kFresnelScale *
+         pow(1.0 + dot(vEyeDirection,surfaceNormal), kFresnelPower),
+         0.0, 1.0
+    );
                     
     // Apply the fresnel term
-    fragColour += fresnel * reflectedColour
-                 + (1 - fresnel) * refractedColour * kEmissiveContrib;
+    fragColour += mix(refractedColour * kEmissiveContrib, reflectedColour, fresnel);
 
 	float facing = dot(normal1, lightVector);
     // Check that the vertex is not facing away from the light
     if (facing > 0)
     {
         // Apply specular term
-        fragColour +=   kSpecularColour *
-                        kSpecularContrib *
-                        max(pow(dot(normal1, halfAngleVector1), 120.0), 0.0);
+        fragColour += kSpecularColour * kSpecularContrib * max(pow(dot(normal1, halfAngleVector1), 120.0), 0.0);
         // Apply diffuse light
         fragColour += kDiffuseColour  * kDiffuseContrib  * facing;
     }
