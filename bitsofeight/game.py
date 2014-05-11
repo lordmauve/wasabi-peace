@@ -49,7 +49,7 @@ class World(EventDispatcher):
     def create_scene(self):
         """Initialise the scene with static objects."""
         music = Music(['battletrack.mp3'])
-        music.play()
+        # music.play()
 
         self.scene = Scene(
             ambient=(0.1, 0.15, 0.2, 1.0),
@@ -131,6 +131,10 @@ class Game(object):
             print 'A key was pressed'
         if symbol == key.D:
             print 'D key was pressed'
+        if symbol == key.W:
+            print 'W key was pressed'
+        if symbol == key.S:
+            print 'S key was pressed'
 
     def on_key_release(self, symbol, modifiers):
         if not symbol in self.key_timer: return
@@ -164,6 +168,36 @@ class Game(object):
                 # TODO - sound event "Hard to starb'd!"
                 pass
             print 'D key was released, held %r' % held
+
+        if symbol == key.W:
+            if held < 1.0:
+                # TODO - sound event "A touch more sail!"
+                print 'small speed increase'
+                pass
+            elif held < 2.0:
+                # TODO - sound event "More sail!"
+                print 'medium speed increase'
+                pass
+            else:
+                # TODO - sound event "Unfurl the mails'l!"
+                print 'hard speed increase'
+                pass
+            print 'W key was released, held %r' % held
+
+        if symbol == key.S:
+            if held < 1.0:
+                # TODO - sound event "Ease off the sail!"
+                print 'small speed decrease'
+                pass
+            elif held < 2.0:
+                # TODO - sound event "Ease off the mains'l!"
+                print 'medium speed decrease'
+                pass
+            else:
+                # TODO - sound event "Drop the anchor!"
+                print 'hard speed decrease'
+                pass
+            print 'W key was released, held %r' % held
 
     def on_draw(self):
         self.gamestate.draw()
