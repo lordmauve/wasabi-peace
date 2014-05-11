@@ -20,6 +20,7 @@ FPS = 60
 
 model_loader = ObjFileLoader()
 ship_model = model_loader.load_obj('assets/models/ship.obj')
+skydome = model_loader.load_obj('assets/models/skydome.obj')
 
 # Test
 
@@ -29,7 +30,7 @@ class World(EventDispatcher):
 
         self.create_scene()
         self.camera = Camera(
-            pos=Point3(10, 10, 10),
+            pos=Point3(10, 2, 10),
             look_at=Point3(0, 1, 0),
             width=WIDTH,
             height=HEIGHT
@@ -47,8 +48,12 @@ class World(EventDispatcher):
         self.scene.add(Sunlight(
             direction=(1, 1, 1),
             colour=(1.0, 0.8, 0.5, 1.0),
-            intensity=1,
+            intensity=3,
         ))
+
+        # Sky dome
+        self.scene.add(skydome)
+
         # Sea
         self.scene.add(
             Plane(

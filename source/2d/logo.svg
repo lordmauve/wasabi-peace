@@ -537,7 +537,10 @@
     </g>
     <g
        id="g4459"
-       transform="matrix(0.92223215,0,0,0.92223215,-3.528276,64.597103)">
+       transform="matrix(0.92223215,0,0,0.92223215,-3.528276,64.597103)"
+       inkscape:export-filename="/home/mauve/dev/wasabi-peace/source/2d/figure1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
       <path
          sodipodi:nodetypes="csc"
          inkscape:connector-curvature="0"
@@ -931,7 +934,10 @@
          id="tspan4606"
          sodipodi:role="line">Magazine</tspan></text>
     <g
-       id="g4634">
+       id="g4634"
+       inkscape:export-filename="/home/mauve/dev/wasabi-peace/source/2d/figure1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
       <path
          sodipodi:nodetypes="ccc"
          inkscape:connector-curvature="0"
@@ -948,10 +954,16 @@
        style="fill:none;stroke:#604939;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 490,879.36218 -19,22"
        id="path4644"
-       inkscape:connector-curvature="0" />
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="/home/mauve/dev/wasabi-peace/source/2d/figure1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
     <g
        id="g4638"
-       transform="matrix(0.65019011,0,0,1.1013216,163.88593,-63.919957)">
+       transform="matrix(0.65019011,0,0,1.1013216,163.88593,-63.919957)"
+       inkscape:export-filename="/home/mauve/dev/wasabi-peace/source/2d/figure1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
       <path
          style="fill:#e6d9c0;fill-opacity:1;stroke:#ac9d93;stroke-width:1.18174219000000003px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          d="m 531,682.36218 c 9.67568,25.83885 58.76618,107.66043 -31.52632,175 70.48085,-40.04623 153.89823,-21.24418 231.52632,-10"
@@ -969,11 +981,14 @@
        d="m 323.14782,627.39101 c -3.10368,-4.87736 -8.80667,-5.33359 -14.27187,-5.42041 -5.24937,-1.13283 -10.57415,-1.60077 -15.95358,-1.11216 -6.48685,0.69437 -11.55647,5.58357 -18.26425,5.27232 -7.70671,0.91099 -15.97775,2.7682 -23.34858,-0.60775 -2.89082,-1.17032 -8.21292,-4.81366 -2.76151,-5.7334 4.45368,-3.72364 7.37231,-9.1744 7.07058,-15.06683 0.59352,-5.52423 -0.41552,-11.12689 -3.93912,-15.29406 -3.7357,-3.57089 -9.06381,-7.4393 -9.53777,-12.97575 -0.80292,-2.91038 0.18245,-9.64438 2.87078,-4.56985 2.5956,5.2782 7.29197,10.04405 13.6392,10.27152 5.63724,0.27148 11.21804,-0.0575 16.44451,-2.3099 4.33425,-1.29697 7.36121,-5.46579 11.98914,-5.8403 5.32214,-1.9933 11.20762,-0.67733 16.76736,-1.06197 5.03312,0.66457 10.20967,1.00463 14.93861,3.07437 1.6571,0.66406 2.89179,0.8276 4.3565,1.87674 z"
        id="path4650"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="ccccccccccccccccc" />
+       sodipodi:nodetypes="ccccccccccccccccc"
+       inkscape:export-filename="/home/mauve/dev/wasabi-peace/source/2d/figure1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
     <g
        transform="matrix(0.38826743,0,0,0.38826743,236.99145,445.58315)"
        id="g3213-6"
-       inkscape:export-filename="/home/mauve/dev/wasabi-peace/assets/sprites/logo.png"
+       inkscape:export-filename="/home/mauve/dev/wasabi-peace/source/2d/figure1.png"
        inkscape:export-xdpi="90"
        inkscape:export-ydpi="90">
       <g
