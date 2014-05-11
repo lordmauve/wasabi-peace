@@ -8,9 +8,9 @@ varying vec3 texcoord;
 
 void main(){
     mat4 nview = view;
-    nview[3][0] = 0;
-    nview[3][1] = 0;
-    nview[3][2] = 0;
+    nview[3][0] = 0.0;
+    nview[3][1] = 0.0;
+    nview[3][2] = 0.0;
     gl_Position = projection * nview * model * vec4(vPosition,1.0);
     
     texcoord = vec3(vPosition.x, vPosition.y, vPosition.z);
