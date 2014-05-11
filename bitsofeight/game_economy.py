@@ -21,13 +21,15 @@ class GameResource(object):
         self.shot_daily_maint  = 0 # might use this for some random effects
 
     def daily_tick(self):
-        '''Decrement the stocks of resources once per day'''
+        '''Decrement the stocks of resources once per 'day' '''
         self.wood  -= self.wood_daily_maint
         self.iron  -= self.iron_daily_maint
         self.rum   -= self.rum_daily_maint
         self.food  -= self.food_daily_maint
         self.water -= self.daily_shot_maint
         self.shot  -= self.shot_daily_maint
+        if random.random() < 0.01:  # life is harsh on the high seas
+            self.poisoned_food()
 
     def shot_fired(self):
         self.shot -= 1
