@@ -1,2 +1,2 @@
-https://pyglet.googlecode.com/files/pyglet-1.2alpha1.tar.gz
-wasabi-scenegraph
+Pyglet - pip install https://pyglet.googlecode.com/files/pyglet-1.2alpha1.tar.gz
+Wasabi scenegraph - pip install wasabi-scenegraph
