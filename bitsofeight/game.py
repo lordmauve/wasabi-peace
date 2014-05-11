@@ -1,3 +1,4 @@
+import time
 import math
 from collections import deque
 
@@ -35,6 +36,37 @@ ship_model = model_loader.load_obj('assets/models/ship.obj')
 skydome = model_loader.load_obj('assets/models/skydome.obj')
 
 
+class Interpolation(object):
+    def __init__(self, fromv, tov, dur=1.0):
+        self.fromv = fromv
+        self.delta = tov - fromv
+        self.dur = float(dur)
+        self.t = 0
+
+    def get(self, dt):
+        self.t = min(self.t + dt / self.dur, 1)
+        v = self.fromv + self.interpolate(self.t) * self.delta
+        return v
+
+    def finished(self):
+        return self.t == 1
+
+
+class LinearInterpolation(Interpolation):
+    def interpolate(self, t):
+        return t
+
+
+class CosineInterpolation(Interpolation):
+    hpi = math.pi * 0.5
+    sin = math.sin  # Don't know why it's called cosine interpolation, sin^2
+                    # is easier
+
+    def interpolate(self, t):
+        sin = self.sin(t / self.hpi)
+        return sin * sin
+
+
 class Ship(object):
     def __init__(self):
         self.model = ModelNode(ship_model)
@@ -42,16 +74,36 @@ class Ship(object):
         self.pos = Point3(0, 0, 0)
         self.angle = 0
         self.helm = 0
+        self._next_helm = None
         self.speed = 1
+        self.t = 0
+
+    def set_helm(self, helm):
+        self._next_helm = CosineInterpolation(self.helm, helm, dur=2)
 
     def update(self, dt):
+        self.t += dt
+        if self._next_helm:
+            self.helm = self._next_helm.get(dt)
+            if self._next_helm.finished():
+                self._next_helm = None
+        roll = 0.05 * math.sin(self.t) + 0.1 * self.helm
+        pitch = 0.02 * math.sin(0.31 * self.t)
+
         self.angle += self.helm * self.speed * 0.03 * dt
         q = Quaternion.new_rotate_axis(self.angle, Vector3(0, 1, 0))
         v = q * Vector3(0, 0, 1) * self.speed * dt
 
         self.pos += v
 
-        self.model.rotation = (math.degrees(self.angle), 0, 1, 0)
+        rot = (
+            q *
+            Quaternion.new_rotate_axis(pitch, Vector3(1, 0, 0)) *
+            Quaternion.new_rotate_axis(roll, Vector3(0, 0, 1))
+        )
+        rotangle, (rotx, roty, rotz) = rot.get_angle_axis()
+
+        self.model.rotation = (math.degrees(rotangle), rotx, roty, rotz)
         self.model.pos = self.pos
 
 
@@ -74,7 +126,7 @@ class ShipOrderHelm(object):
 
     def act(self, ship):
         print self.get_message(ship)
-        ship.helm = self.strength
+        ship.set_helm(self.strength)
 
 
 class ShipOrderAccelerate(object):
@@ -173,7 +225,7 @@ class World(EventDispatcher):
         self.scene.render(self.camera)
 
 
-class KeyControls(object):
+class KeyControls(pyglet.window.key.KeyStateHandler):
     """Process events from keys, and turn them into orders."""
     # Maximum Key press durations for different strength actions
     LIGHT = 0.2
@@ -206,6 +258,7 @@ class KeyControls(object):
         self.orders_queue.put(o)
 
     def slow_down(self, held):
+        s = self.get_strength(held)
         if s == 1:
             o = ShipOrderHelm('port', 0)
         else:
@@ -224,29 +277,21 @@ class KeyControls(object):
         self.orders_queue = order_queue
 
     def update(self, dt):
+        # Would like to do this with on_press/on_release events, but they both
+        # appear to fire repeatedly, so we can't.
         self.t += dt
-
-    def on_key_press(self, symbol, modifiers):
-        if symbol not in self.bindings:
-            return
-        if symbol not in self.key_timer:
-            self.key_timer[symbol] = self.t
-
-    def on_key_release(self, symbol, modifiers):
-        try:
-            func = self.bindings[symbol]
-        except KeyError:
-            pass
-        else:
-            held = self.t - self.key_timer[symbol]
-            func(held)
-            del self.key_timer[symbol]
+        for key, func in self.bindings.items():
+            if self[key]:
+                if key not in self.key_timer:
+                    self.key_timer[key] = self.t
+            else:
+                v = self.key_timer.get(key)
+                if v is not None:
+                    func(self.t - v)
+                    del self.key_timer[key]
 
     def push_handlers(self, window):
-        window.push_handlers(
-            self.on_key_press,
-            self.on_key_release
-        )
+        window.push_handlers(self)
 
 
 class OrdersQueue(object):
