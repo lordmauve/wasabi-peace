@@ -297,7 +297,7 @@ class KeyControls(pyglet.window.key.KeyStateHandler):
         window.push_handlers(self)
 
 
-class OrdersQueue(object):
+class OrdersQueue(EventDispatcher):
     """Handle queueing of orders and applying them at intervals.
 
     Some orders may be contradictory; this class should sort them out.
@@ -318,11 +318,16 @@ class OrdersQueue(object):
     def update(self, dt):
         if self.wait > 0:
             self.wait -= dt
+            if self.wait <= 0:
+                self.dispatch_event('on_ready_for_orders')
         elif self.queue:
             o = self.queue.popleft()
+            self.dispatch_event('on_order', o)
             o.act(self.ship)
             self.wait = self.INTERVAL
 
+OrdersQueue.register_event_type('on_order')
+OrdersQueue.register_event_type('on_ready_for_orders')
 
 
 class BattleMode(object):
@@ -335,21 +340,33 @@ class BattleMode(object):
         self.ship = Ship()
         self.world.spawn(self.ship)
         self.orders_queue = OrdersQueue(self.ship)
+        self.orders_queue.push_handlers(self.on_order)
+        self.scroll = 0
         self.keys = KeyControls(self.orders_queue)
 
         self.hud = HUD()
 
-        self.t = 0
+	self.t = 0
         self.music = Music(['battletrack.mp3'])
         self.sounds = Sound(['cannon1.mp3', 'cannon2.mp3'])
+
+    def on_order(self, o):
+        if self.scroll:
+            self.hud.remove_scroll(self.scroll)
+            pyglet.clock.unschedule(self.clear_order)
+        self.scroll = self.hud.create_scroll(o.get_message(self.ship), (25, 10))
+        pyglet.clock.schedule_once(self.clear_order, 2.0)
+
+    def clear_order(self, *args):
+        if self.scroll:
+            self.scroll.delete()
+            self.scroll = None
 
     def start(self):
         pyglet.clock.schedule_interval(self.update, 1.0 / FPS)
 
         self.keys.push_handlers(self.window)
         self.sounds.sound_on_event('cannon2.mp3', self.window, 'on_mouse_press')
-        # self.music.play()
-        self.s = self.hud.create_scroll('Ahoy there matey!', (20, 10))
 
     def stop(self):
         self.window.pop_handlers()
