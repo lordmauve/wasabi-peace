@@ -21,8 +21,8 @@ varying vec3 lightDirection;
 
 const vec3 lightPosition = vec3(2000.0, 1600.0, 2000.0);
 
-void main(){
-
+void main()
+{
     //OpenGL uses column-major operator on left (P*V*M * v1 = v2) convention.
     // (MVP * position)
     //Same as row-major operator on right (v1 * M*V*P = v2)

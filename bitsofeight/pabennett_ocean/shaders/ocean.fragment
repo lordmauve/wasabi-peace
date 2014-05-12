@@ -54,35 +54,9 @@ void main()
     // the eye through the water's surface to the sea floor.
     // Get the direction to the eye from the vertex position
     vec3 vEyeDirection = normalize(worldPosition-eyePosition);
-    // Distance from the eye to surface point
-    float eyeDistance = distance(eyePosition,worldPosition);
-    // Refracted eye ray through ocean surface
-    vec3 vRefract = refract(vEyeDirection, surfaceNormal, kAir2Water);
-
-    // Calculate the distance along the Refraction ray from the ocean surface
-    // to the interception point on the ocean floor.
-    float depth = worldPosition.y;
-    float distance = abs(depth / vRefract.y);
-    // Calculate the interception point of the ray on the ocean floor.
-    vec3 vIntercept = ((worldPosition + vRefract * distance)/tileSize);
-
-    // If the ray strikes the ocean floor sample the floor texture, otherwise
-    // return the 'out of bounds' color - in this case the glclearcolour
-    vec4 refractedColour = textureCube(cubemap, vRefract);
     vec4 reflectedColour = textureCube(cubemap, reflect(vEyeDirection, surfaceNormal));
 
-    if ((vIntercept.x < tileCount.x) && (vIntercept.x > 0.0) &&
-        (vIntercept.z < tileCount.y) && (vIntercept.z > 0.0))
-        refractedColour = texture2D(texture, vIntercept.zx);
-
     // Apply ambient, emissive, diffuse and specular terms to the surface
-
-    // Calculate transmitted light absorbtion using Beer's law
-    // Note: This has been hacked slightly to factor in distance from the
-    // viewer to create an attenuation effect on distant water patches.
-    vec4 absorbtion = vec4(exp(-absorptionCoefficient * (2.0*distance+(2.0*eyeDistance))));
-    // Apply the transmitted light absorbtion
-    refractedColour *= absorbtion;
 
     // Calculate the fresnel term for mixing between reflected and refracted
     // light on the water's surface
@@ -93,7 +67,7 @@ void main()
     );
 
     // Apply the fresnel term
-    fragColour += mix(refractedColour * kEmissiveContrib, reflectedColour, fresnel);
+    fragColour += mix(vec4(0,0,0.5,1) * kEmissiveContrib, reflectedColour, fresnel);
 
 	float facing = dot(normal1, lightVector);
     // Check that the vertex is not facing away from the light

@@ -20,7 +20,7 @@ class Surface():
                  tileSize=64, 
                  tilesX=1,
                  tilesZ=1,
-                 scale=1.0, 
+                 scale=2.0,
                  offset=Vector3(0.0,0.0,0.0)):
         
         '''
@@ -179,14 +179,17 @@ class Surface():
         
         # Translate Y 
         self.modelMatrix[13] = self.offset.y        
-                    
+
+        self.offset.x = -2000
+        self.offset.z = -2000
+
         for i in range(self.tileCount.x):
             # Translate X
             self.modelMatrix[12] = self.offset.x + self.tileSize * self.scale * i
             for j in range(self.tileCount.y):
                 # Translate Z
                 self.modelMatrix[14] = self.offset.z + self.tileSize * self.scale * j
-                glUniform2fv(self.tileOffsetHandle, 2, (c_float*2)(*[i, j]))        
+                glUniform2fv(self.tileOffsetHandle, 2, (c_float*2)(*[i, j]))
                 glUniformMatrix4fv(self.modelMatrixHandle, 1, False, self.modelMatrix.elements)
                 glDrawElements(GL_TRIANGLES, self.vertexCount, GL_UNSIGNED_INT, 0)
 
