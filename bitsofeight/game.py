@@ -1,17 +1,15 @@
 import time
 import math
 from collections import deque
+import random
 
 import pyglet
 from pyglet.window import key
 from pyglet.event import EventDispatcher, EVENT_HANDLED
 
-from euclid import Point3, Vector3, Quaternion
+from euclid import Point3, Vector3, Quaternion, Matrix4
 
-from wasabisg.plane import Plane
 from wasabisg.scenegraph import Camera, Scene, v3, ModelNode
-from wasabisg.loaders.objloader import ObjFileLoader
-from wasabisg.model import Material, Model
 from wasabisg.lighting import Sunlight
 
 # Configure loader before importing any game assets
@@ -27,16 +25,14 @@ pyglet.resource.add_font('benegraphic.ttf')
 # Import other modules here
 from .sound import Music, Sound
 from .hud import HUD
+from .models import (
+    ship_model, skydome, cannonball_model, sea_model
+)
 
 WIDTH = 1024
 HEIGHT = 600
 
 FPS = 60
-
-
-model_loader = ObjFileLoader()
-ship_model = model_loader.load_obj('assets/models/ship.obj')
-skydome = model_loader.load_obj('assets/models/skydome.obj')
 
 
 class Interpolation(object):
@@ -70,7 +66,32 @@ class CosineInterpolation(Interpolation):
         return sin * sin
 
 
+class Cannonball(object):
+    GRAVITY = Vector3(0, -1.0, 0)
+
+    def __init__(self, pos, v):
+        self.model = ModelNode(cannonball_model)
+        self.pos = pos
+        self.v = v
+
+    def update(self, dt):
+        u = self.v
+        self.v += self.GRAVITY * dt
+        self.pos += 0.5 * (u + self.v) * dt
+
+        if self.pos.y < 0:
+            self.world.destroy(self)
+        else:
+            self.model.pos = self.pos
+
+
 class Ship(object):
+    # Y up, -z forward
+    GUNS = [
+        (Point3(1.17, 1.44, 1.47), Vector3(15, 0.2, 0)),
+        (Point3(-1.17, 1.44, 1.47), Vector3(-15, 0.2, 0)),
+    ]
+
     def __init__(self):
         self.model = ModelNode(ship_model)
 
@@ -80,32 +101,52 @@ class Ship(object):
         self._next_helm = None
         self.speed = 1
         self.t = 0
+        self.rot = Quaternion()
 
     def set_helm(self, helm):
         self._next_helm = CosineInterpolation(self.helm, helm, dur=2)
 
+    def local_to_world(self, v):
+        return self.rot * v + self.pos
+
+    def get_matrix(self):
+        r = self.rot.get_matrix()
+        t = Matrix4.new_translate(*self.pos)
+        return t * r
+
+    def fire(self):
+        m = self.get_matrix()
+        for pos, v in self.GUNS:
+            wvec = m * v
+            wpos = m * pos
+            self.world.spawn(Cannonball(wpos, wvec))
+
     def update(self, dt):
         self.t += dt
+
+        # interpolate over the helm input
         if self._next_helm:
             self.helm = self._next_helm.get(dt)
             if self._next_helm.finished():
                 self._next_helm = None
-        roll = 0.05 * math.sin(self.t) + 0.1 * self.helm
+
+        # Compute some bobbing motion
+        roll = 0.05 * math.sin(self.t) + 0.2 * self.helm
         pitch = 0.02 * math.sin(0.31 * self.t)
 
-        self.angle += self.helm * self.speed * 0.03 * dt
+        # Update ship angle and position
+        self.angle += self.helm * self.speed * 0.2 * dt
         q = Quaternion.new_rotate_axis(self.angle, Vector3(0, 1, 0))
         v = q * Vector3(0, 0, 1) * self.speed * dt
-
         self.pos += v
 
-        rot = (
+        # Apply ship angle and position to model
+        self.rot = (
             q *
             Quaternion.new_rotate_axis(pitch, Vector3(1, 0, 0)) *
             Quaternion.new_rotate_axis(roll, Vector3(0, 0, 1))
         )
-        rotangle, (rotx, roty, rotz) = rot.get_angle_axis()
-
+        rotangle, (rotx, roty, rotz) = self.rot.get_angle_axis()
         self.model.rotation = (math.degrees(rotangle), rotx, roty, rotz)
         self.model.pos = self.pos
 
@@ -128,7 +169,6 @@ class ShipOrderHelm(object):
         return self.messages[abs(self.strength)].format(self=self)
 
     def act(self, ship):
-        print self.get_message(ship)
         ship.set_helm(self.strength)
 
 
@@ -148,8 +188,24 @@ class ShipOrderAccelerate(object):
         return self.messages[self.strength].format(self=self)
 
     def act(self, ship):
-        print self.get_message(ship)
         ship.speed = min(3, ship.speed + 1)
+
+
+class ShipOrderFire(object):
+    messages = [
+        u"Let 'em have it!",
+        u"Fire!",
+        u"Give 'em a full broadside!",
+    ]
+
+    def __init__(self):
+        self.message = random.choice(self.messages)
+
+    def get_message(self, ship):
+        return self.message
+
+    def act(self, ship):
+        ship.fire()
 
 
 class ShipOrderDecelerate(ShipOrderAccelerate):
@@ -161,7 +217,6 @@ class ShipOrderDecelerate(ShipOrderAccelerate):
     ]
 
     def act(self, ship):
-        print self.get_message(ship)
         ship.speed = max(0, ship.speed - 1)
 
 
@@ -185,6 +240,19 @@ class World(EventDispatcher):
             pass
         else:
             self.scene.add(model)
+        obj.world = self
+
+    def destroy(self, obj):
+        self.objects.remove(obj)
+
+        try:
+            model = obj.model
+        except AttributeError:
+            pass
+        else:
+            self.scene.remove(model)
+
+        obj.world = None
 
     def update(self, dt):
         """Update the world through the given time step (in seconds)."""
@@ -208,17 +276,7 @@ class World(EventDispatcher):
         self.scene.add(self.skydome)
 
         # Sea
-        self.sea = ModelNode(
-            Model(meshes=[
-                Plane(
-                    size=1000,
-                    material=Material(
-                        name='sea',
-                        Kd=(0.2, 0.4, 0.6)
-                    )
-                )
-            ])
-        )
+        self.sea = ModelNode(sea_model)
         self.scene.add(self.sea)
 
     def draw(self):
@@ -268,12 +326,16 @@ class KeyControls(pyglet.window.key.KeyStateHandler):
             o = ShipOrderDecelerate(s - 1)
         self.orders_queue.put(o)
 
+    def fire(self, held):
+        self.orders_queue.put(ShipOrderFire())
+
     def __init__(self, order_queue):
         self.bindings = {
             key.A: self.turn_left,
             key.D: self.turn_right,
             key.W: self.speed_up,
-            key.S: self.slow_down
+            key.S: self.slow_down,
+            key.SPACE: self.fire
         }
         self.key_timer = {}
         self.t = 0
@@ -366,7 +428,7 @@ class BattleMode(object):
         pyglet.clock.schedule_interval(self.update, 1.0 / FPS)
 
         self.keys.push_handlers(self.window)
-        self.sounds.sound_on_event('cannon2.mp3', self.window, 'on_mouse_press')
+        #self.sounds.sound_on_event('cannon2.mp3', self.window, 'on_mouse_press')
 
     def stop(self):
         self.window.pop_handlers()
