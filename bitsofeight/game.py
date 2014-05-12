@@ -3,7 +3,7 @@ from pyglet.event import EventDispatcher
 
 from euclid import Point3, Vector3
 
-from wasabisg.scenegraph import Camera, Scene
+from wasabisg.scenegraph import Camera, Scene, ModelNode
 from wasabisg.lighting import Sunlight
 
 # Configure loader before importing any game assets
