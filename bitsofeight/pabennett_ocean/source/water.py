@@ -10,7 +10,7 @@ import shader
 
 class Ocean():
     def __init__(self,
-        camera, cubemap=None, scale=1.0, tileSize=128, tilesX=1, tilesZ=1,
+        camera, cubemap=None, scale=20.0, tileSize=128, tilesX=1, tilesZ=1,
         depth=30.0, waveHeight=3.125e-5, wind=Vector2(64.0,128.0), period=10.0
     ):
         self.cubemapTexture = cubemap.texture if cubemap else None
