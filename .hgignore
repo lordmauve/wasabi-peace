@@ -7,3 +7,4 @@ build/*
 dist/*
 .idea/*
 .python-version
+bitsofeight.egg-info
