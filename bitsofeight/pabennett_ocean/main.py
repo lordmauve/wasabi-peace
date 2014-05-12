@@ -25,7 +25,7 @@ def getOptions():
 
 def getWindow(options):
     window = pyglet.window.Window(
-        caption='Caustics',
+        caption='FFT ocean with definitely no caustics!',
         width=options.getint('Options', 'screenwidth'),
         height=options.getint('Options', 'screenheight'),
         config=Config(
