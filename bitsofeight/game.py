@@ -13,17 +13,20 @@ from wasabisg.scenegraph import Camera, Scene, v3, ModelNode
 from wasabisg.loaders.objloader import ObjFileLoader
 from wasabisg.model import Material, Model
 from wasabisg.lighting import Sunlight
-from sound import Music
 
-
+# Configure loader before importing any game assets
 pyglet.resource.path += [
-    'assets/sounds',
-    'assets/textures',
-    'assets/sprites',
-    'assets/fonts'
+    'assets/sounds/',
+    'assets/textures/',
+    'assets/sprites/',
+    'assets/fonts/'
 ]
 pyglet.resource.reindex()
 pyglet.resource.add_font('benegraphic.ttf')
+
+# Import other modules here
+from .sound import Music
+from .hud import HUD
 
 WIDTH = 1024
 HEIGHT = 600
@@ -321,7 +324,6 @@ class OrdersQueue(object):
             self.wait = self.INTERVAL
 
 
-
 class BattleMode(object):
     """Sailing on the open ocean!"""
     def __init__(self, game):
@@ -334,6 +336,8 @@ class BattleMode(object):
         self.orders_queue = OrdersQueue(self.ship)
         self.keys = KeyControls(self.orders_queue)
 
+        self.hud = HUD()
+
     def start(self):
         pyglet.clock.schedule_interval(self.update, 1.0 / FPS)
 
@@ -341,13 +345,19 @@ class BattleMode(object):
         music = Music(['battletrack.mp3'])
         self.t = 0
         # music.play()
+        self.s = self.hud.create_scroll('Ahoy there matey!', (20, 10))
 
     def stop(self):
         self.window.pop_handlers()
         pyglet.clock.unschedule(self.update)
 
     def draw(self):
+        from pyglet import gl
+        flags = gl.GL_ALL_ATTRIB_BITS
+        gl.glPushAttrib(flags)
         self.world.draw()
+        gl.glPopAttrib(flags)
+        self.hud.draw()
 
     def update(self, dt):
         self.keys.update(dt)
