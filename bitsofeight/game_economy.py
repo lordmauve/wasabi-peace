@@ -58,7 +58,7 @@ class GameEvents(object):
             self.poisoned_food()
 
     def shot_fired(self):
-        self.res['shot'] -= 1
+        self.res['shot']['amount'] -= 1
         if random.random() < 0.05:  # cannons are prone to destruction
             # TODO - dispatch a "you've lost a cannon" event
             self.res['cannon']['amount'] -= 1
