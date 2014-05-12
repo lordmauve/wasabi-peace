@@ -1,52 +1,80 @@
 import random
 
+
 class GameResource(object):
-    '''Simple container class for the in-game resources'''
+    """Simple container class for the in-game resources"""
     def __init__(self):
         # set some initial amounts
-        self.wood   = 50
-        self.iron   = 50
-        self.rum    = 50
-        self.food   = 50
-        self.water  = 50
-        self.shot   = 20
-        self.cannon = 2
+        self.res = {
+            'wood':    {'amount': 50,
+                        'maint':  1,
+                        'income': 0,
+                        },
 
-        # the default just running per day costs you
-        self.wood_daily_maint  = 1
-        self.iron_daily_maint  = 1
-        self.rum_daily_maint   = 1
-        self.food_daily_maint  = 1
-        self.water_daily_maint = 1
-        self.shot_daily_maint  = 0 # might use this for some random effects
+            'iron':    {'amount': 50,
+                        'maint':  1,
+                        'income': 0,
+                        },
+
+            'rum':     {'amount': 50,
+                        'maint':  1,
+                        'income': 0,
+                        },
+
+            'food':    {'amount': 50,
+                        'maint':  1,
+                        'income': 0,
+                        },
+
+            'water':   {'amount': 50,
+                        'maint':  1,
+                        'income': 0,
+                        },
+
+            # implicitly includes powder, unless we want to make powder kegs a weapon
+            'shot':   {'amount':  20,
+                       'maint':   0,
+                       'income':  0,
+                       },
+
+            'cannon': {'amount': 2},
+        }
+
+class GameEvents(object):
+    def __init__(self):
+        self.res = GameResource().res
 
     def daily_tick(self):
         '''Decrement the stocks of resources once per 'day' '''
-        self.wood  -= self.wood_daily_maint
-        self.iron  -= self.iron_daily_maint
-        self.rum   -= self.rum_daily_maint
-        self.food  -= self.food_daily_maint
-        self.water -= self.daily_shot_maint
-        self.shot  -= self.shot_daily_maint
+        for item, i in self.res.iteritems():
+            i['amount'] = i['amount'] + i['income'] - i['maint']
+
         if random.random() < 0.01:  # life is harsh on the high seas
             self.poisoned_food()
 
     def shot_fired(self):
-        self.shot -= 1
-        if random.random() < 0.05:
+        self.res['shot'] -= 1
+        if random.random() < 0.05:  # cannons are prone to destruction
             # TODO - dispatch a "you've lost a cannon" event
-            self.cannon -= 1
+            self.res['cannon']['amount'] -= 1
 
     def build_cannon(self):
-        if self.cannon < 10:
-            self.iron -= 50
-            self.wood -= 10
-            self.cannon += 1
+        # only in base!
+        if self.res['cannon']['amount'] < 10:
+            self.res['iron']['amount'] -= 50
+            self.res['wood']['amount'] -= 10
+            # TODO - dispatch "tink tink" building sound
+            self.res['cannon']['amount'] += 1
         else:
             # TODO - "too many cannons!"
             pass
 
     def poisoned_food(self):
         # TODO - dispatch a "spoiled food" event, but not in combat
-        self.food = int(self.food) / 2
+        self.res['food']['amount'] = int(self.res['food']['amount']) / 2
+
+    def claim_island(self):
+        self.res['wood']['income'] += 2
+
+
 
