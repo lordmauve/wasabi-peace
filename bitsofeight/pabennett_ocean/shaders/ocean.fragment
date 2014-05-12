@@ -70,17 +70,17 @@ void main()
     // return the 'out of bounds' color - in this case the glclearcolour
     vec4 refractedColour = textureCube(cubemap, vRefract);
     vec4 reflectedColour = textureCube(cubemap, reflect(vEyeDirection, surfaceNormal));
-    
+
     if ((vIntercept.x < tileCount.x) && (vIntercept.x > 0.0) &&
         (vIntercept.z < tileCount.y) && (vIntercept.z > 0.0))
         refractedColour = texture2D(texture, vIntercept.zx);
-    
+
     // Apply ambient, emissive, diffuse and specular terms to the surface
 
     // Calculate transmitted light absorbtion using Beer's law
     // Note: This has been hacked slightly to factor in distance from the
     // viewer to create an attenuation effect on distant water patches.
-    vec4 absorbtion = exp(-absorptionCoefficient * (2.0*distance+(2.0*eyeDistance)));
+    vec4 absorbtion = vec4(exp(-absorptionCoefficient * (2.0*distance+(2.0*eyeDistance))));
     // Apply the transmitted light absorbtion
     refractedColour *= absorbtion;
 
@@ -91,7 +91,7 @@ void main()
          pow(1.0 + dot(vEyeDirection,surfaceNormal), kFresnelPower),
          0.0, 1.0
     );
-                    
+
     // Apply the fresnel term
     fragColour += mix(refractedColour * kEmissiveContrib, reflectedColour, fresnel);
 
