@@ -25,7 +25,7 @@ class Music(Player):
 
 class Sound(object):
     def __init__(self, sounds):
-        """Loud sounds into memory for immediate playing."""
+        """Load sounds into memory for immediate playing."""
 
         self.sounds = {}
         for sound in sounds:
