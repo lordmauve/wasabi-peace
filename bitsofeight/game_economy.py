@@ -78,8 +78,16 @@ class GameEvents(object):
         # TODO - dispatch a "spoiled food" event, but not in combat
         self.res['food']['amount'] = int(self.res['food']['amount']) / 2
 
-    def claim_island(self):
-        self.res['wood']['income'] += 2
+    def buy_wood(self):
+        # TODO - dispatch coins sound
+        # lumber is cheap
+        self.res['gold']['amount'] -= 1
+        self.res['wood']['amount'] += 10
 
+    def buy_iron(self):
+        # TODO - dispatch coins sound
+        # iron is not cheap
+        self.res['gold']['amount'] -= 1
+        self.res['iron']['amount'] += 1
 
 
