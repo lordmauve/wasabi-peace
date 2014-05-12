@@ -25,7 +25,7 @@ pyglet.resource.reindex()
 pyglet.resource.add_font('benegraphic.ttf')
 
 # Import other modules here
-from .sound import Music
+from .sound import Music, Sound
 from .hud import HUD
 
 WIDTH = 1024
@@ -324,6 +324,7 @@ class OrdersQueue(object):
             self.wait = self.INTERVAL
 
 
+
 class BattleMode(object):
     """Sailing on the open ocean!"""
     def __init__(self, game):
@@ -338,13 +339,16 @@ class BattleMode(object):
 
         self.hud = HUD()
 
+        self.t = 0
+        self.music = Music(['battletrack.mp3'])
+        self.sounds = Sound(['cannon1.mp3', 'cannon2.mp3'])
+
     def start(self):
         pyglet.clock.schedule_interval(self.update, 1.0 / FPS)
 
         self.keys.push_handlers(self.window)
-        music = Music(['battletrack.mp3'])
-        self.t = 0
-        # music.play()
+        self.sounds.sound_on_event('cannon2.mp3', self.window, 'on_mouse_press')
+        # self.music.play()
         self.s = self.hud.create_scroll('Ahoy there matey!', (20, 10))
 
     def stop(self):
@@ -356,7 +360,7 @@ class BattleMode(object):
         flags = gl.GL_ALL_ATTRIB_BITS
         gl.glPushAttrib(flags)
         self.world.draw()
-        gl.glPopAttrib(flags)
+        gl.glPopAttrib()
         self.hud.draw()
 
     def update(self, dt):
