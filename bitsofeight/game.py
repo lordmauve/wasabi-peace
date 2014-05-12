@@ -1,12 +1,9 @@
-import time
-import math
-
 import pyglet
 from pyglet.event import EventDispatcher
 
-from euclid import Point3, Vector3, Quaternion, Matrix4
+from euclid import Point3, Vector3
 
-from wasabisg.scenegraph import Camera, Scene, v3, ModelNode
+from wasabisg.scenegraph import Camera, Scene
 from wasabisg.lighting import Sunlight
 
 # Configure loader before importing any game assets
