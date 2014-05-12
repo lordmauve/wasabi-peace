@@ -1,10 +1,13 @@
 import pyglet
+import random
+import math
 from pyglet.event import EventDispatcher
 
 from euclid import Point3, Vector3
 
 from wasabisg.scenegraph import Camera, Scene, ModelNode
 from wasabisg.lighting import Sunlight
+
 
 # Configure loader before importing any game assets
 pyglet.resource.path += [
@@ -91,6 +94,21 @@ class World(EventDispatcher):
         self.sea = ModelNode(sea_model)
         self.scene.add(self.sea)
 
+    def spawn_ships(self):
+        tau = 2 * math.pi
+        for i in range(5):
+            bearing = random.uniform(0, tau)
+            rng = random.uniform(100, 300)
+            x = rng * math.sin(bearing)
+            z = rng * math.cos(bearing)
+
+            angle = random.uniform(0, tau)
+            s = Ship(
+                pos=Point3(x, 0, z),
+                angle=angle
+            )
+            self.spawn(s)
+
     def draw(self):
         x, _, z = self.camera.pos
         self.skydome.pos = Point3(x, 0, z)
@@ -158,6 +176,7 @@ class BattleMode(object):
 
         self.keys.push_handlers(self.window)
         #self.sounds.sound_on_event('cannon2.mp3', self.window, 'on_mouse_press')
+        self.world.spawn_ships()
 
     def stop(self):
         self.window.pop_handlers()
@@ -213,13 +232,25 @@ def main():
         action='store_true',
         help='Start in full screen mode'
     )
+    parser.add_option(
+        '-p', '--profile',
+        action='store_true',
+        help='Run with profiler'
+    )
 
     options, args = parser.parse_args()
 
     game = Game(
         windowed=not options.fullscreen
     )
-    pyglet.app.run()
+
+    if options.profile:
+        import cProfile
+        pr = cProfile.Profile()
+        pr.runcall(pyglet.app.run)
+        pr.print_stats('cumulative')
+    else:
+        pyglet.app.run()
 
 
 if __name__ == '__main__':

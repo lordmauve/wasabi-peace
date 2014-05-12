@@ -66,11 +66,11 @@ class Ship(object):
         (Point3(-1.17, 1.44, 1.47), Vector3(-15, 0.2, 0)),
     ]
 
-    def __init__(self):
+    def __init__(self, pos=Point3(0, 0, 0), angle=0):
         self.model = ModelNode(ship_model)
 
-        self.pos = Point3(0, 0, 0)
-        self.angle = 0
+        self.pos = pos
+        self.angle = angle
         self.helm = 0
         self._next_helm = None
         self.speed = 1
