@@ -14,7 +14,6 @@ setup(
         'pyglet==1.2alpha1',
         'wasabi-scenegraph',
     ],
-
     dependency_links=[
         'http://code.google.com/p/pyglet/downloads/list',
     ],
@@ -27,5 +26,4 @@ setup(
             'bitsofeight = bitsofeight.game:main',
         ],
     }
-
 )
