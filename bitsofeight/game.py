@@ -98,6 +98,27 @@ class World(EventDispatcher):
         self.scene.render(self.camera)
 
 
+class ChaseCamera(object):
+    def __init__(self, camera, ship):
+        self.camera = camera
+        self.ship = ship
+
+    def update(self, dt):
+        self.camera.look_at = self.ship.pos
+        m = self.ship.get_matrix()
+        self.camera.pos = m * Point3(0, 6, -16)
+
+
+class IsometricCamera(object):
+    def __init__(self, camera, ship):
+        self.camera = camera
+        self.ship = ship
+
+    def update(self, dt):
+        self.camera.look_at = self.ship.pos
+        self.camera.pos = self.ship.pos +  Vector3(10, 5, 10)
+
+
 class BattleMode(object):
     """Sailing on the open ocean!"""
     def __init__(self, game):
@@ -111,6 +132,8 @@ class BattleMode(object):
         self.orders_queue.push_handlers(self.on_order)
         self.scroll = 0
         self.keys = KeyControls(self.orders_queue)
+
+        self.camera_controller = ChaseCamera(self.world.camera, self.ship)
 
         self.hud = HUD()
 
@@ -152,8 +175,7 @@ class BattleMode(object):
         self.keys.update(dt)
         self.orders_queue.update(dt)
         self.world.update(dt)
-        self.world.camera.look_at = self.ship.pos
-        self.world.camera.pos = self.ship.pos + Vector3(10, 5, 10)
+        self.camera_controller.update(dt)
         self.t += dt
 
 
