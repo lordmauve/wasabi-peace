@@ -52,6 +52,11 @@ class ScrollBG(object):
             ])
         )
 
+    def delete(self):
+        if self.list:
+            self.list.delete()
+            self.list = None
+
 
 class Scroll(object):
     def __init__(self, text, pos, batch):
@@ -78,22 +83,19 @@ class Scroll(object):
         self.left = Sprite(scroll_left, x=x, y=y, group=group, batch=batch)
         self.right = Sprite(scroll_right, x=x + w, y=y, group=group, batch=batch)
 
+    def delete(self):
+        self.label.delete()
+        self.left.delete()
+        self.right.delete()
+        self.bg.delete()
+
 
 class HUD(object):
     def __init__(self):
         self.batch = Batch()
-        self.objects = []
 
     def create_scroll(self, text, pos):
-        s = Scroll(text, pos, self.batch)
-        self.objects.append(s)
-        return s
-
-    def destroy_scroll(self, scroll):
-        self.objects.remove(scroll)
-
-    def clear(self):
-        del self.objects[:]
+        return Scroll(text, pos, self.batch)
 
     def draw(self):
         gl.glMatrixMode(gl.GL_PROJECTION)
