@@ -1,11 +1,9 @@
 import time
 import math
-from collections import deque
-import random
 
 import pyglet
 from pyglet.window import key
-from pyglet.event import EventDispatcher, EVENT_HANDLED
+from pyglet.event import EventDispatcher
 
 from euclid import Point3, Vector3, Quaternion, Matrix4
 
@@ -28,6 +26,8 @@ from .hud import HUD
 from .models import (
     ship_model, skydome, cannonball_model, sea_model
 )
+from .orders import OrdersQueue
+from .keys import KeyControls
 
 WIDTH = 1024
 HEIGHT = 600
@@ -104,7 +104,7 @@ class Ship(object):
         self.rot = Quaternion()
 
     def set_helm(self, helm):
-        self._next_helm = CosineInterpolation(self.helm, helm, dur=2)
+        self._next_helm = CosineInterpolation(self.helm, helm, dur=3)
 
     def local_to_world(self, v):
         return self.rot * v + self.pos
@@ -131,11 +131,11 @@ class Ship(object):
                 self._next_helm = None
 
         # Compute some bobbing motion
-        roll = 0.05 * math.sin(self.t) + 0.2 * self.helm
+        roll = 0.05 * math.sin(self.t) + 0.15 * self.helm
         pitch = 0.02 * math.sin(0.31 * self.t)
 
         # Update ship angle and position
-        self.angle += self.helm * self.speed * 0.2 * dt
+        self.angle += self.helm * self.speed * 0.15 * dt
         q = Quaternion.new_rotate_axis(self.angle, Vector3(0, 1, 0))
         v = q * Vector3(0, 0, 1) * self.speed * dt
         self.pos += v
@@ -149,75 +149,6 @@ class Ship(object):
         rotangle, (rotx, roty, rotz) = self.rot.get_angle_axis()
         self.model.rotation = (math.degrees(rotangle), rotx, roty, rotz)
         self.model.pos = self.pos
-
-
-class ShipOrderHelm(object):
-    messages = [
-        u'Rudder amidships!',
-        u'A little to {self.direction}!',
-        u'Turn to {self.direction}!',
-        u'Hard ta {self.direction}!'
-    ]
-
-    def __init__(self, direction, strength):
-        assert direction in ('port', 'starboard')
-        assert 0 <= strength <= 3
-        self.direction = direction
-        self.strength = -strength if direction == 'starboard' else strength
-
-    def get_message(self, ship):
-        return self.messages[abs(self.strength)].format(self=self)
-
-    def act(self, ship):
-        ship.set_helm(self.strength)
-
-
-class ShipOrderAccelerate(object):
-    messages = [
-        u'',
-        u'A touch more sail!',
-        u'More sail!',
-        u'Give me every scrap of sail!',
-    ]
-
-    def __init__(self, strength):
-        assert 0 <= strength <= 3
-        self.strength = strength
-
-    def get_message(self, ship):
-        return self.messages[self.strength].format(self=self)
-
-    def act(self, ship):
-        ship.speed = min(3, ship.speed + 1)
-
-
-class ShipOrderFire(object):
-    messages = [
-        u"Let 'em have it!",
-        u"Fire!",
-        u"Give 'em a full broadside!",
-    ]
-
-    def __init__(self):
-        self.message = random.choice(self.messages)
-
-    def get_message(self, ship):
-        return self.message
-
-    def act(self, ship):
-        ship.fire()
-
-
-class ShipOrderDecelerate(ShipOrderAccelerate):
-    messages = [
-        u'',
-        u"Ease off the mails'l!",
-        u"Ease off all sail!",
-        u"All stop!"
-    ]
-
-    def act(self, ship):
-        ship.speed = max(0, ship.speed - 1)
 
 
 class World(EventDispatcher):
@@ -284,112 +215,6 @@ class World(EventDispatcher):
         self.skydome.pos = Point3(x, 0, z)
         self.sea.pos = Point3(x, 0, z)
         self.scene.render(self.camera)
-
-
-class KeyControls(pyglet.window.key.KeyStateHandler):
-    """Process events from keys, and turn them into orders."""
-    # Maximum Key press durations for different strength actions
-    LIGHT = 0.2
-    MEDIUM = 0.5
-
-    def get_strength(self, held):
-        if held < self.LIGHT:
-            return 1
-        elif held < self.MEDIUM:
-            return 2
-        else:
-            return 3
-
-    def turn_left(self, held):
-        self.orders_queue.put(
-            ShipOrderHelm('port', self.get_strength(held))
-        )
-
-    def turn_right(self, held):
-        self.orders_queue.put(
-            ShipOrderHelm('starboard', self.get_strength(held))
-        )
-
-    def speed_up(self, held):
-        s = self.get_strength(held)
-        if s == 1:
-            o = ShipOrderHelm('port', 0)
-        else:
-            o = ShipOrderAccelerate(s - 1)
-        self.orders_queue.put(o)
-
-    def slow_down(self, held):
-        s = self.get_strength(held)
-        if s == 1:
-            o = ShipOrderHelm('port', 0)
-        else:
-            o = ShipOrderDecelerate(s - 1)
-        self.orders_queue.put(o)
-
-    def fire(self, held):
-        self.orders_queue.put(ShipOrderFire())
-
-    def __init__(self, order_queue):
-        self.bindings = {
-            key.A: self.turn_left,
-            key.D: self.turn_right,
-            key.W: self.speed_up,
-            key.S: self.slow_down,
-            key.SPACE: self.fire
-        }
-        self.key_timer = {}
-        self.t = 0
-        self.orders_queue = order_queue
-
-    def update(self, dt):
-        # Would like to do this with on_press/on_release events, but they both
-        # appear to fire repeatedly, so we can't.
-        self.t += dt
-        for key, func in self.bindings.items():
-            if self[key]:
-                if key not in self.key_timer:
-                    self.key_timer[key] = self.t
-            else:
-                v = self.key_timer.get(key)
-                if v is not None:
-                    func(self.t - v)
-                    del self.key_timer[key]
-
-    def push_handlers(self, window):
-        window.push_handlers(self)
-
-
-class OrdersQueue(EventDispatcher):
-    """Handle queueing of orders and applying them at intervals.
-
-    Some orders may be contradictory; this class should sort them out.
-
-    """
-    INTERVAL = 2
-
-    def __init__(self, ship):
-        self.queue = deque()
-        self.ship = ship
-        self.wait = 0
-
-    def put(self, order):
-        # TODO: work out how this order might supercede other orders
-        # already in the queue.
-        self.queue.append(order)
-
-    def update(self, dt):
-        if self.wait > 0:
-            self.wait -= dt
-            if self.wait <= 0:
-                self.dispatch_event('on_ready_for_orders')
-        elif self.queue:
-            o = self.queue.popleft()
-            self.dispatch_event('on_order', o)
-            o.act(self.ship)
-            self.wait = self.INTERVAL
-
-OrdersQueue.register_event_type('on_order')
-OrdersQueue.register_event_type('on_ready_for_orders')
 
 
 class BattleMode(object):
