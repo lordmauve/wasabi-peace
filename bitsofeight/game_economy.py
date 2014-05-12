@@ -6,6 +6,11 @@ class GameResource(object):
     def __init__(self):
         # set some initial amounts
         self.res = {
+            'gold':    {'amount': 10,
+                        'maint':  1,
+                        'income': 0,
+                        },
+
             'wood':    {'amount': 50,
                         'maint':  1,
                         'income': 0,
