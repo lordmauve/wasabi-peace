@@ -12,6 +12,7 @@ from .particles import WakeEmitter
 class Interpolation(object):
     def __init__(self, fromv, tov, dur=1.0):
         self.fromv = fromv
+        self.tov = tov
         self.delta = tov - fromv
         self.dur = float(dur)
         self.t = 0
@@ -36,7 +37,7 @@ class CosineInterpolation(Interpolation):
                     # is easier
 
     def interpolate(self, t):
-        sin = self.sin(t / self.hpi)
+        sin = self.sin(t * self.hpi)
         return sin * sin
 
 
@@ -103,17 +104,18 @@ class Ship(object):
         self.t += dt
 
         # interpolate over the helm input
-        if self._next_helm:
+        if self._next_helm is not None:
             self.helm = self._next_helm.get(dt)
             if self._next_helm.finished():
+                self.helm = self._next_helm.tov
                 self._next_helm = None
 
         # Compute some bobbing motion
-        roll = 0.05 * math.sin(self.t) + 0.15 * self.helm
+        roll = 0.05 * math.sin(self.t) + 0.05 * self.helm
         pitch = 0.02 * math.sin(0.31 * self.t)
 
         # Update ship angle and position
-        self.angle += self.helm * self.speed * 0.15 * dt
+        self.angle += self.helm * self.speed * 0.05 * dt
         q = Quaternion.new_rotate_axis(self.angle, Vector3(0, 1, 0))
         v = q * Vector3(0, 0, 1) * self.speed * dt
         self.pos += v
