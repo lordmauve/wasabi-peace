@@ -310,6 +310,7 @@ class MaterialGroup(Group):
         out['Ks'] = _pad(material.get('Ks', (0, 0, 0, 1)))
         out['Ns'] = max(_to_float(material.get('Ns', 0.0)), 1e-3)
         out['illum'] = material.get('illum', 1)
+        out['transmit'] = material.get('transmit', 0.0)
         return out
 
     def set_state(self):

@@ -65,6 +65,7 @@ uniform vec4 specular;
 uniform vec4 ambient;
 uniform float dissolve;
 uniform float specular_exponent;
+uniform float transmit;
 
 vec3 calc_light(in vec3 frag_normal, in int lnum, in vec3 diffuse) {
     vec4 light = positions[lnum];
@@ -85,9 +86,12 @@ vec3 calc_light(in vec3 frag_normal, in int lnum, in vec3 diffuse) {
         lightvec = light.xyz;
     }
 
-    float diffuse_component = max(0.0, dot(
+    float diffuse_component = dot(
         frag_normal, lightvec
-    ));
+    );
+    if (diffuse_component < 0.0) {
+        diffuse_component = -transmit * diffuse_component;
+    }
 
     float specular_component = 0.0;
     if (diffuse_component > 0.0) {
@@ -124,6 +128,7 @@ lighting_shader.bind_material_to_uniformf('Kd', 'diffuse_colour')
 lighting_shader.bind_material_to_uniformf('Ks', 'specular')
 lighting_shader.bind_material_to_uniformf('Ns', 'specular_exponent')
 lighting_shader.bind_material_to_uniformf('d', 'dissolve')
+lighting_shader.bind_material_to_uniformf('transmit', 'transmit')
 
 
 class LightingPass(object):
@@ -350,7 +355,7 @@ class LightingAccumulationRenderer(object):
         glEnable(GL_TEXTURE_2D)
         glClearColor(1.0, 0, 0, 0)
         glClear(GL_DEPTH_BUFFER_BIT)
-        glDisable(GL_CULL_FACE)
+        glEnable(GL_CULL_FACE)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_ALPHA_TEST)
