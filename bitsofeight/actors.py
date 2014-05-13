@@ -6,6 +6,7 @@ from euclid import Point3, Vector3, Quaternion, Matrix4
 from .models import (
     ship_model, cannonball_model
 )
+from .particles import WakeEmitter
 
 
 class Interpolation(object):
@@ -68,6 +69,7 @@ class Ship(object):
 
     def __init__(self, pos=Point3(0, 0, 0), angle=0):
         self.model = ModelNode(ship_model)
+        self.emitters = [WakeEmitter(self)]
 
         self.pos = pos
         self.angle = angle

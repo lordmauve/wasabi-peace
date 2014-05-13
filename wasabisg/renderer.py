@@ -150,10 +150,10 @@ class LightingPass(object):
 
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
         glBindTexture(GL_TEXTURE_2D, self.lightbuf)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexImage2D(
             GL_TEXTURE_2D, 0, GL_RGBA32F,
             width, height,
@@ -190,12 +190,17 @@ class LightingPass(object):
     def render(self, camera, objects):
         lights = [o for o in objects if isinstance(o, BaseLight)]
 
+        glPushAttrib(GL_ALL_ATTRIB_BITS)
         fbo = self.get_fbo(camera.viewport)
 
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
-        glAlphaFunc(GL_GREATER, 0.9)
         glBlendFunc(GL_SRC_ALPHA, GL_ZERO)
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
 
         # First pass writes depth, so write it with an offset
         glEnable(GL_POLYGON_OFFSET_FILL)
@@ -203,7 +208,7 @@ class LightingPass(object):
         glDepthMask(GL_TRUE)
 
         glBindFramebuffer(GL_FRAMEBUFFER, fbo)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glClear(GL_DEPTH_BUFFER_BIT)
         if not lights:
             return
         lighting_shader.bind()
@@ -236,6 +241,9 @@ class LightingPass(object):
         lighting_shader.unbind()
         glDepthMask(GL_TRUE)
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glPopAttrib()
 
     def __del__(self):
         if self.fbo:
@@ -302,9 +310,6 @@ class CompositePass(object):
     def render(self, camera, objects):
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
-        glEnable(GL_ALPHA_TEST)
-        glAlphaFunc(GL_GREATER, 0.9)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         composite_shader.bind()
 
         composite_shader.bind_texture(
@@ -350,14 +355,16 @@ class LightingAccumulationRenderer(object):
 
     def render(self, scene, camera):
         self.lighting.ambient = scene.ambient
+
+        flags = GL_ALL_ATTRIB_BITS
+        glPushAttrib(flags)
+
         glEnable(GL_TEXTURE_2D)
-        glClearColor(1.0, 0, 0, 0)
         glClear(GL_DEPTH_BUFFER_BIT)
         glEnable(GL_CULL_FACE)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_ALPHA_TEST)
-        glAlphaFunc(GL_GREATER, 0.9)
+        camera.set_matrix()
         for p in self.passes:
-            camera.set_matrix()
             p.render(camera, scene.objects)
+        glPopAttrib()

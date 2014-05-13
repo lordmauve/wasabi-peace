@@ -28,6 +28,8 @@ from .models import (
 from .orders import OrdersQueue
 from .keys import KeyControls
 from .actors import Ship
+from .particles import particles
+
 
 WIDTH = 1024
 HEIGHT = 600
@@ -38,6 +40,7 @@ FPS = 60
 class World(EventDispatcher):
     def __init__(self):
         self.objects = []
+        self.emitters = []
 
         self.create_scene()
         self.camera = Camera(
@@ -55,6 +58,10 @@ class World(EventDispatcher):
             pass
         else:
             self.scene.add(model)
+        if hasattr(obj, 'emitters'):
+            for e in obj.emitters:
+                self.emitters.append(e)
+                e.start()
         obj.world = self
 
     def destroy(self, obj):
@@ -66,11 +73,18 @@ class World(EventDispatcher):
             pass
         else:
             self.scene.remove(model)
+        if hasattr(obj, 'emitters'):
+            for e in obj.emitters:
+                e.stop()
+            self.emitters = [o for o in self.emitters if o not in obj.emitters]
 
         obj.world = None
 
     def update(self, dt):
         """Update the world through the given time step (in seconds)."""
+        for e in self.emitters:
+            e.update()
+        particles.update(dt)
         for o in self.objects:
             o.update(dt)
 
@@ -79,6 +93,10 @@ class World(EventDispatcher):
         self.scene = Scene(
             ambient=(0.2, 0.2, 0.2, 1.0),
         )
+
+        # Add the particle system
+        self.scene.add(particles)
+
         # Sun
         self.scene.add(Sunlight(
             direction=Vector3(0.82, 0.31, 0.48),
@@ -125,6 +143,13 @@ class ChaseCamera(object):
         self.camera.look_at = self.ship.pos
         m = self.ship.get_matrix()
         self.camera.pos = m * Point3(0, 6, -16)
+
+
+class SideCamera(ChaseCamera):
+    def update(self, dt):
+        self.camera.look_at = self.ship.pos + Vector3(0, 3, 0)
+        m = self.ship.get_matrix()
+        self.camera.pos = m * Point3(8, 3, 0)
 
 
 class IsometricCamera(object):
@@ -183,11 +208,7 @@ class BattleMode(object):
         pyglet.clock.unschedule(self.update)
 
     def draw(self):
-        from pyglet import gl
-        flags = gl.GL_ALL_ATTRIB_BITS
-        gl.glPushAttrib(flags)
         self.world.draw()
-        gl.glPopAttrib()
         self.hud.draw()
 
     def update(self, dt):
