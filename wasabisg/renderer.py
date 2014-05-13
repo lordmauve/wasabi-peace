@@ -89,9 +89,7 @@ vec3 calc_light(in vec3 frag_normal, in int lnum, in vec3 diffuse) {
     float diffuse_component = dot(
         frag_normal, lightvec
     );
-    if (diffuse_component < 0.0) {
-        diffuse_component = -transmit * diffuse_component;
-    }
+    diffuse_component = max(0.0, diffuse_component) - transmit * min(0.0, diffuse_component);
 
     float specular_component = 0.0;
     if (diffuse_component > 0.0) {

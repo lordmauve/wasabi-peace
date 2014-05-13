@@ -77,7 +77,7 @@ class World(EventDispatcher):
     def create_scene(self):
         """Initialise the scene with static objects."""
         self.scene = Scene(
-            ambient=(0.1, 0.15, 0.2, 1.0),
+            ambient=(0.2, 0.2, 0.2, 1.0),
         )
         # Sun
         self.scene.add(Sunlight(
