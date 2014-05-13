@@ -44,7 +44,8 @@ Kd 0.9 0.9 0.9
 Ks 0.298343 0.298343 0.298343
 Ni 1.000000
 d 1.000000
-illum 2
+illum 13
+transmit 0.4
 
 newmtl Wood
 Ns 25.490196
