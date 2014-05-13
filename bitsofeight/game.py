@@ -6,7 +6,7 @@ from pyglet.event import EventDispatcher
 from euclid import Point3, Vector3
 
 from wasabisg.scenegraph import Camera, Scene, ModelNode
-from wasabisg.lighting import Sunlight
+from wasabisg.lighting import Sunlight, Light
 
 
 # Configure loader before importing any game assets
@@ -83,7 +83,7 @@ class World(EventDispatcher):
         self.scene.add(Sunlight(
             direction=Vector3(0.82, 0.31, 0.48),
             colour=(1.0, 0.8, 0.5, 1.0),
-            intensity=3,
+            intensity=1,
         ))
 
         # Sky dome
@@ -207,13 +207,16 @@ class Game(object):
     """
     def __init__(self, windowed):
         global WIDTH, HEIGHT
+
         if windowed:
             self.window = pyglet.window.Window(
                 width=WIDTH,
                 height=HEIGHT
             )
         else:
-            self.window = pyglet.window.Window(fullscreen=True)
+            self.window = pyglet.window.Window(
+                fullscreen=True
+            )
             WIDTH = self.window.width
             HEIGHT = self.window.height
         self.window.push_handlers(self.on_draw)
