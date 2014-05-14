@@ -50,7 +50,7 @@ def test_body_bounds():
             Sphere(Point3(1, 0, 0), 1),
         ]
     )
-    assert b.bounds() == Sphere(radius=3)
+    eq_(b.bounds(), Sphere(radius=3))
 
 
 def test_body_bounds_transformed():
@@ -78,7 +78,7 @@ def test_body_collision():
     )
     col = b1.collide(b2)
     assert col is not None
-    eq_(col, Vector3(-0.25, 0, 0))
+    eq_(col, Vector3(0.25, 0, 0))
 
 
 def test_line_segment_bounds():
