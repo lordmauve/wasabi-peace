@@ -79,10 +79,16 @@ class Cannonball(object):
 
 class Ship(Positionable):
     # Y up, -z forward
-    GUNS = [
-        (Point3(1.17, 1.44, 1.47), Vector3(15, 0.2, 0)),
-        (Point3(-1.17, 1.44, 1.47), Vector3(-15, 0.2, 0)),
-    ]
+    GUNS = {
+        'port': [
+            (Point3(1.17, 1.44, 1.47), Vector3(15, 0.2, 0)),
+            (Point3(1.17, 1.44, 0), Vector3(15, 0.2, 0)),
+        ],
+        'starboard': [
+            (Point3(-1.17, 1.44, 1.47), Vector3(-15, 0.2, 0)),
+            (Point3(-1.17, 1.44, 0), Vector3(-15, 0.2, 0)),
+        ],
+    }
 
     SHAPES = [
         Sphere(Point3(0, 1, z), 1.3)
@@ -100,17 +106,59 @@ class Ship(Positionable):
         self._next_helm = None
         self.speed = 1
         self.t = 0
+        self.last_broadside = 'port'
 
     def set_helm(self, helm):
         self._next_helm = CosineInterpolation(self.helm, helm, dur=3)
 
-    def fire(self):
-        """Fire all guns!"""
+    def get_targets(self, lookahead=10, range=30):
+        """Get a dictionary of potential targets on either side.
+
+        We look for targets that are within a distance of range units and up to
+        lookahead units ahead or astern of us.
+
+        """
+        targets = {
+            'port': [],
+            'starboard': []
+        }
+
         m = self.get_matrix()
-        for pos, v in self.GUNS:
+        forward = m * Vector3(0, 0, -1)
+        port = m * Vector3(1, 0, 0)
+        range2 = range * range
+
+        for o in self.world.objects:
+            if isinstance(o, Ship) and o is not self:
+                rel = o.pos - self.pos
+                if abs(rel.dot(forward)) < lookahead and rel.magnitude_squared() < range2:
+                    side = 'port' if rel.dot(port) > 0 else 'starboard'
+                    targets[side].append(o)
+        return targets
+
+    def fire(self):
+        """Fire the cannons!
+
+        This is an automagical firing system that will work out whether either
+        side has a promising target. In the case that they both do, alternate
+        sides.
+
+        """
+        targets = self.get_targets()
+
+        if bool(targets['port']) ^ bool(targets['starboard']):
+            side = 'port' if targets['port'] else 'starboard'
+#            print len(targets[side]), "targets to", side + " cap'n"
+        else:
+            side = 'port' if self.last_broadside == 'starboard' else 'starboard'
+#            print "Haven't fired to", side, "for a while"
+
+        m = self.get_matrix()
+        for pos, v in self.GUNS[side]:
             wvec = m * v
             wpos = m * pos
             self.world.spawn(Cannonball(wpos, wvec, owner=self))
+        self.last_broadside = side
 
     def update(self, dt):
         self.t += dt
