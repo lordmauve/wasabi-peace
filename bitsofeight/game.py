@@ -1,3 +1,4 @@
+import os.path
 import pyglet
 import random
 import math
@@ -10,12 +11,12 @@ from wasabisg.lighting import Sunlight, Light
 
 
 # Configure loader before importing any game assets
-pyglet.resource.path += [
-    'assets/sounds/',
-    'assets/textures/',
-    'assets/sprites/',
-    'assets/fonts/'
-]
+pyglet.resource.path += [os.path.join('assets', d) for d in [
+    'sounds',
+    'textures',
+    'sprites',
+    'fonts'
+]]
 pyglet.resource.reindex()
 pyglet.resource.add_font('benegraphic.ttf')
 
@@ -202,6 +203,8 @@ class BattleMode(object):
         self.keys.push_handlers(self.window)
         #self.sounds.sound_on_event('cannon2.mp3', self.window, 'on_mouse_press')
         self.world.spawn_ships()
+        particles.system.run_ahead(5, 10)
+        self.music.play()
 
     def stop(self):
         self.window.pop_handlers()
