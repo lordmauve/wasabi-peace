@@ -188,7 +188,7 @@ class BattleMode(object):
 
         self.camera_controller = ChaseCamera(self.world.camera, self.ship)
 
-        self.hud = HUD()
+        self.hud = HUD(WIDTH, HEIGHT)
 
 	self.t = 0
         self.music = Music(['battletrack.mp3'])
@@ -198,12 +198,17 @@ class BattleMode(object):
         if self.scroll:
             self.hud.remove_scroll(self.scroll)
             pyglet.clock.unschedule(self.clear_order)
-        self.scroll = self.hud.create_scroll(o.get_message(self.ship), (25, 10))
+        self.scroll = (
+            self.hud.create_scroll(o.get_message(self.ship), 130, 30),
+            self.hud.create_sprite('captain', 10, 10)
+        )
         pyglet.clock.schedule_once(self.clear_order, 2.0)
 
     def clear_order(self, *args):
         if self.scroll:
-            self.scroll.delete()
+            scroll, sprite = self.scroll
+            scroll.delete()
+            sprite.delete()
             self.scroll = None
 
     def start(self):
