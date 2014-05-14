@@ -78,6 +78,38 @@ class ModelNode(object):
             self.group.unset_state_recursive()
 
 
+class GroupNode(object):
+    """Group a bunch of other nodes."""
+    def __init__(self,
+            nodes,
+            pos=(0, 0, 0),
+            rotation=(0, 0, 1, 0),
+            group=None):
+        self.nodes = nodes
+        self.pos = pos
+        self.rotation = rotation
+        self.group = group
+
+    def update(self, dt):
+        for n in self.nodes:
+            n.update(dt)
+
+    def is_transparent(self):
+        return False
+
+    def draw(self, camera):
+        if self.group:
+            self.group.set_state_recursive()
+        glPushMatrix()
+        glTranslatef(*self.pos)
+        glRotatef(*self.rotation)
+        for n in self.nodes:
+            n.draw(camera)
+        glPopMatrix()
+        if self.group:
+            self.group.unset_state_recursive()
+
+
 class RayNode(object):
     """A ray, drawn as a billboard towards the camera."""
     ta = (0, 0)
@@ -145,6 +177,16 @@ class Scene(object):
     def prepare_model(self, model):
         return self.renderer.prepare_model(model)
 
+    def prepare_modelnode(self, c):
+        c.model_instance = self.prepare_model(c.model_instance)
+
+    def prepare_group(self, group):
+        for c in group.nodes:
+            if isinstance(c, GroupNode):
+                self.prepare_group(c)
+            else:
+                self.prepare_modelnode(c)
+
     def clear(self):
         """Remove all objects from the scene."""
         del self.objects[:]
@@ -165,6 +207,8 @@ class Scene(object):
             obj = ModelNode(model)
         elif isinstance(obj, ModelNode):
             obj.model_instance = self.prepare_model(obj.model_instance)
+        elif isinstance(obj, GroupNode):
+            self.prepare_group(obj)
         if obj in self.objects:
             return
         self.objects.append(obj)

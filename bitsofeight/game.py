@@ -31,6 +31,7 @@ from .orders import OrdersQueue
 from .keys import KeyControls
 from .actors import Ship
 from .particles import particles
+from .physics import Physics
 
 
 WIDTH = 1024
@@ -43,6 +44,7 @@ class World(EventDispatcher):
     def __init__(self):
         self.objects = []
         self.emitters = []
+        self.physics = Physics()
 
         self.create_scene()
         self.camera = Camera(
@@ -64,6 +66,8 @@ class World(EventDispatcher):
             for e in obj.emitters:
                 self.emitters.append(e)
                 e.start()
+        if hasattr(obj, 'body'):
+            self.physics.add(obj.body)
         obj.world = self
 
     def destroy(self, obj):
@@ -79,6 +83,8 @@ class World(EventDispatcher):
             for e in obj.emitters:
                 e.stop()
             self.emitters = [o for o in self.emitters if o not in obj.emitters]
+        if hasattr(obj, 'body'):
+            self.physics.remove(obj.body)
 
         obj.world = None
 
@@ -89,6 +95,7 @@ class World(EventDispatcher):
         particles.update(dt)
         for o in self.objects:
             o.update(dt)
+        self.physics.do_collisions()
 
     def create_scene(self):
         """Initialise the scene with static objects."""

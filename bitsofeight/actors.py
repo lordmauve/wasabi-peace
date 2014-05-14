@@ -1,5 +1,8 @@
 import math
-from wasabisg.scenegraph import ModelNode
+from math import pow
+from wasabisg.scenegraph import ModelNode, GroupNode
+from wasabisg.model import Material, Model, Mesh
+from wasabisg.sphere import Sphere as SphereMesh
 
 from euclid import Point3, Vector3, Quaternion, Matrix4
 
@@ -83,21 +86,20 @@ class Ship(Positionable):
 
     SHAPES = [
         Sphere(Point3(0, 1, z), 1.3)
-        for z in xrange(-3, 4, 2)
+        for z in xrange(-3, 4)
     ]
 
     def __init__(self, pos=Point3(0, 0, 0), angle=0):
+        super(Ship, self).__init__(pos)
         self.model = ModelNode(ship_model)
         self.emitters = [WakeEmitter(self)]
         self.body = Body(self, self.SHAPES)
 
-        self.pos = pos
         self.angle = angle
         self.helm = 0
         self._next_helm = None
         self.speed = 1
         self.t = 0
-        self.rot = Quaternion()
 
     def set_helm(self, helm):
         self._next_helm = CosineInterpolation(self.helm, helm, dur=3)
@@ -127,8 +129,10 @@ class Ship(Positionable):
         # Update ship angle and position
         self.angle += self.helm * self.speed * 0.05 * dt
         q = Quaternion.new_rotate_axis(self.angle, Vector3(0, 1, 0))
-        v = q * Vector3(0, 0, 1) * self.speed * dt
-        self.pos += v
+        accel = q * Vector3(0, 0, 1) * self.speed * dt
+        self.vel += accel
+        self.vel *= pow(0.5, dt)  # Drag
+        self.pos += self.vel * dt + Vector3(0, -0.5, 0) * self.pos.y * dt
 
         # Apply ship angle and position to model
         self.rot = (
