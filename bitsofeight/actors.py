@@ -7,6 +7,7 @@ from .models import (
     ship_model, cannonball_model
 )
 from .particles import WakeEmitter
+from .physics import Positionable, Sphere, Body, LineSegment
 
 
 class Interpolation(object):
@@ -46,14 +47,26 @@ class Cannonball(object):
 
     def __init__(self, pos, v, owner):
         self.model = ModelNode(cannonball_model)
-        self.pos = pos
+        self.pos = self.lastpos = pos
         self.v = v
         self.owner = owner
 
     def update(self, dt):
         u = self.v
         self.v += self.GRAVITY * dt
-        self.pos += 0.5 * (u + self.v) * dt
+        s = 0.5 * (u + self.v) * dt
+
+        line = LineSegment(self.pos, s)
+        for o in self.world.objects:
+            if not isinstance(o, Ship) or o is self.owner:
+                continue
+            hit = line.collide_body(o.body)
+            if hit:
+                print "Hit at", hit
+                self.world.destroy(self)
+                return
+
+        self.pos += s
 
         if self.pos.y < 0:
             self.world.destroy(self)
@@ -61,16 +74,23 @@ class Cannonball(object):
             self.model.pos = self.pos
 
 
-class Ship(object):
+
+class Ship(Positionable):
     # Y up, -z forward
     GUNS = [
         (Point3(1.17, 1.44, 1.47), Vector3(15, 0.2, 0)),
         (Point3(-1.17, 1.44, 1.47), Vector3(-15, 0.2, 0)),
     ]
 
+    SHAPES = [
+        Sphere(Point3(0, 1, z), 1.3)
+        for z in xrange(-3, 4, 2)
+    ]
+
     def __init__(self, pos=Point3(0, 0, 0), angle=0):
         self.model = ModelNode(ship_model)
         self.emitters = [WakeEmitter(self)]
+        self.body = Body(self, self.SHAPES)
 
         self.pos = pos
         self.angle = angle
@@ -82,15 +102,6 @@ class Ship(object):
 
     def set_helm(self, helm):
         self._next_helm = CosineInterpolation(self.helm, helm, dur=3)
-
-    def local_to_world(self, v):
-        return self.rot * v + self.pos
-
-    def get_matrix(self):
-        """Get the transformation matrix of the ship's position and rotation."""
-        r = self.rot.get_matrix()
-        t = Matrix4.new_translate(*self.pos)
-        return t * r
 
     def fire(self):
         """Fire all guns!"""
