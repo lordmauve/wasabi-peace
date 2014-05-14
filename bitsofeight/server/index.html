@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script>
+      var websocket = new WebSocket('ws://localhost:9000/ws');
+      websocket.onopen    = function (evt) {
+            console.log("Connected to WebSocket server.");
+            websocket.send("Hello Echo!");
+      };
+      websocket.onclose   = function (evt) { console.log("Disconnected"); };
+      websocket.onmessage = function (evt) { document.getElementById('msg').innerHTML = evt.data; };
+      websocket.onerror   = function (evt) { console.log('Error occured: ' + evt.data); };
+    </script>
+  </head>
+  <body>
+    <h1>Websocket demo</h1>
+    Message: <span id="msg" />
+  </body>
+</html>
