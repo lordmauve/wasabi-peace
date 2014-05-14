@@ -171,6 +171,7 @@ class BattleMode(object):
         self.world = World()
 
         self.ship = Ship()
+        self.ship.speed = 0
         self.world.spawn(self.ship)
         self.orders_queue = OrdersQueue(self.ship)
         self.orders_queue.push_handlers(self.on_order)
@@ -203,7 +204,6 @@ class BattleMode(object):
         self.keys.push_handlers(self.window)
         #self.sounds.sound_on_event('cannon2.mp3', self.window, 'on_mouse_press')
         self.world.spawn_ships()
-        particles.system.run_ahead(5, 10)
         self.music.play()
 
     def stop(self):
