@@ -87,8 +87,8 @@ class Body(object):
         return len(self._shapes)
 
     def __iter__(self):
-        pos = self.positionable.pos
-        return (s.translated(pos) for s in self._shapes)
+        m = self.positionable.get_matrix()
+        return (s.transformed(m) for s in self._shapes)
 
     def collide(self, b):
         """Detect whether b is colliding with this Body.
@@ -103,13 +103,17 @@ class Body(object):
         if not self.bounds().collides(b.bounds()):
             return None
 
+        hits = []
         for s in self:
             for bs in b:
                 if s.collides(bs):
                     v = bs.centre - s.centre
                     dist = v.magnitude()
                     need = s.radius + bs.radius
-                    return ((need - dist) / dist) * v
+                    hits.append(((need - dist) / dist) * v)
+        if hits:
+            return max(hits, key=Vector3.magnitude_squared)
+        return None
 
 
 class LineSegment(object):
