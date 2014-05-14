@@ -117,7 +117,7 @@ class World(EventDispatcher):
         tau = 2 * math.pi
         for i in range(5):
             bearing = random.uniform(0, tau)
-            rng = random.uniform(100, 300)
+            rng = random.uniform(50, 100)
             x = rng * math.sin(bearing)
             z = rng * math.cos(bearing)
 
