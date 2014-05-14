@@ -5,13 +5,14 @@ import math
 from pyglet.event import EventDispatcher
 
 from euclid import Point3, Vector3
+import posixpath
 
 from wasabisg.scenegraph import Camera, Scene, ModelNode
 from wasabisg.lighting import Sunlight, Light
 
 
 # Configure loader before importing any game assets
-pyglet.resource.path += [os.path.join('assets', d) for d in [
+pyglet.resource.path += [posixpath.join('assets', d) for d in [
     'sounds',
     'textures',
     'sprites',
