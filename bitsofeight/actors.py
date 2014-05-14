@@ -74,7 +74,6 @@ class Cannonball(object):
             self.model.pos = self.pos
 
 
-
 class Ship(Positionable):
     # Y up, -z forward
     GUNS = [

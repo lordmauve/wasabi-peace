@@ -31,6 +31,9 @@ class Sphere(object):
         r = self.radius
         return dist2 <= r * r
 
+    def __repr__(self):
+        return 'Sphere(%r, %r)' % (self.centre, self.radius)
+
     def transformed(self, m):
         """Return a new sphere whose position is transformed by the matrix m.
 
@@ -46,14 +49,10 @@ class Sphere(object):
 
 class Positionable(object):
     """Base class for things that are positionable."""
-    pos = Point3()
-    rot = Quaternion()
-
-    def __init__(self, pos=None, rot=None):
-        if pos:
-            self.pos = pos
-        if rot:
-            self.rot = rot
+    def __init__(self, pos=None, rot=None, vel=None):
+        self.pos = pos if pos is not None else Point3()
+        self.rot = rot if rot is not None else Quaternion()
+        self.vel = vel if vel is not None else Vector3()
 
     def local_to_world(self, v):
         return self.rot * v + self.pos
@@ -95,7 +94,8 @@ class Body(object):
         """Detect whether b is colliding with this Body.
 
         If colliding, return a Vec3 which is the separation needed to part
-        them.
+        them (in the b -> b2 direction, eg. add it to b2.pos or subtract it
+        from b.pos)
 
         Otherwise, return None.
 
@@ -106,7 +106,7 @@ class Body(object):
         for s in self:
             for bs in b:
                 if s.collides(bs):
-                    v = s.centre - bs.centre
+                    v = bs.centre - s.centre
                     dist = v.magnitude()
                     need = s.radius + bs.radius
                     return ((need - dist) / dist) * v
@@ -180,6 +180,8 @@ class LineSegment(object):
 
 
 class Physics(object):
+    COR = 0.3  # Coefficient of restitution
+
     def __init__(self):
         self.bodies = []
 
@@ -188,3 +190,37 @@ class Physics(object):
 
     def remove(self, body):
         self.bodies.remove(body)
+
+    def do_collisions(self):
+        bodies = self.bodies
+        # Use an O(n^2) algorithm for now
+        for rest, b1 in enumerate(bodies, start=1):
+            for b2 in bodies[rest:]:
+                v = b1.collide(b2)
+                if v is not None:
+                    self.handle_collision(b1, b2, v)
+
+    def handle_collision(self, b1, b2, overlap):
+        p1 = b1.positionable
+        p2 = b2.positionable
+
+        # Separate the two bodies
+        direction = overlap.normalized()
+        s1 = direction.dot(p1.vel)
+        s2 = direction.dot(p2.vel)
+        if s1 or s2:
+            frac = s1 / (s1 + s2)
+        else:
+            frac = 0.5
+        p1.pos -= overlap * frac
+        p2.pos += overlap * (1.0 - frac)
+
+        # Bounce them a bit
+        v1 = s1 * direction
+        v2 = s2 * direction
+        v_total = v1 + v2
+        v_rel = v2 - v1
+        restitution = v_rel * self.COR
+        p1.vel += (v_total + restitution) * 0.5 - v1
+        p2.vel += (v_total - restitution) * 0.5 - v2
+
