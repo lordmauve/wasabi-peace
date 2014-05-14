@@ -90,17 +90,32 @@ class Scroll(object):
         self.bg.delete()
 
 
-class HUD(object):
-    def __init__(self):
-        self.batch = Batch()
 
-    def create_scroll(self, text, pos):
-        return Scroll(text, pos, self.batch)
+class HUD(object):
+    SPRITES = {
+        'captain': 'captain.png',
+    }
+
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.batch = Batch()
+        self.load_sprites()
+
+    def load_sprites(self):
+        load = pyglet.resource.image
+        self.sprites = dict((k, load(v)) for k, v in self.SPRITES.items())
+
+    def create_scroll(self, text, x, y):
+        return Scroll(text, (x, y), self.batch)
+
+    def create_sprite(self, name, x, y):
+        return Sprite(self.sprites[name], x, y, batch=self.batch)
 
     def draw(self):
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        gl.glOrtho(0, 800, 0, 600, 1, -1)
+        gl.glOrtho(0, self.width, 0, self.height, 1, -1)
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
         self.batch.draw()
