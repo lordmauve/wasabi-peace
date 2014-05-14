@@ -37,11 +37,11 @@ wake_particles = particles.create_group(
 class WakeEmitter(object):
     group = wake_particles
 
-    # position and velocity for each emitter
+    # position, velocity, rate for each emitter
     emitter_positions = [
-        (Point3(1.3, 0.2, 3), Vector3(0.5, 0, 0)),  # port bow
-        (Point3(-1.3, 0.2, 3), Vector3(-0.5, 0, 0)),  # starboard bow
-        (Point3(0, 0.2, -3), Vector3(0, 0, 0)),  # stern
+        (Point3(1.3, 0.2, 3), Vector3(0.5, 0, 0), 5),  # port bow
+        (Point3(-1.3, 0.2, 3), Vector3(-0.5, 0, 0), 5),  # starboard bow
+        (Point3(0, 0.2, -3), Vector3(0, 0, 0), 20),  # stern
     ]
 
     def __init__(self, ship):
@@ -60,7 +60,7 @@ class WakeEmitter(object):
                     velocity=(0.04, 0.0, 0.04),
                 ),
                 rate=5 if i < 2 else 20
-            ) for i, (p, v) in enumerate(self.emitter_positions)
+            ) for i, (p, v, rate) in enumerate(self.emitter_positions)
         ]
 
     def start(self):
@@ -74,8 +74,9 @@ class WakeEmitter(object):
     def update(self):
         """Update the emitters."""
         m = self.ship.get_matrix()
-        for e, (p, v) in zip(self.emitters, self.emitter_positions):
+        for e, (p, v, r) in zip(self.emitters, self.emitter_positions):
             px, _, pz = m * p
             e.template.position = px, 0.1, pz
             vx, _, vz = m * v
             e.template.velocity = vx, 0.0, vz
+            e.rate = self.ship.speed * r
