@@ -10,9 +10,12 @@ setup(
     url='https://bitbucket.org/lordmauve/wasabi-peace',
     packages=['bitsofeight'],
     install_requires=[
-        'numpy',
+        #'numpy',
         'pyglet==1.2alpha1',
-        'wasabi-scenegraph',
+        'wasabi-lepton==1.0b2',
+        'PyOpenGL==3.0.2',
+        'pyglet>=1.2alpha1',
+        'euclid>=0.1',
     ],
     dependency_links=[
         'http://code.google.com/p/pyglet/downloads/list',
@@ -20,6 +23,7 @@ setup(
     zip_safe=False,
     package_data={
         'assets': '*',
+        'lib':'*.dll',
     },
     entry_points={
         'console_scripts': [
