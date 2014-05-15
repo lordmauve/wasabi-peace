@@ -11,7 +11,7 @@ from .models import (
     cannonball_model
 )
 from .physics import Positionable, Sphere, Body, LineSegment
-from .particles import WakeEmitter, spawn_smoke
+from .particles import WakeEmitter, spawn_smoke, spawn_splinters
 from .sailing import get_sail_power, get_heeling_moment, get_sail_setting
 
 
@@ -91,6 +91,7 @@ class Cannonball(object):
             hit = line.collide_body(o.body)
             if hit:
                 print "Hit at", hit
+                spawn_splinters(hit, self.v)
                 self.world.destroy(self)
                 return
 
@@ -139,7 +140,6 @@ class Ship(Positionable):
         self.roll = 0.0
         self.t = 0
         self.last_broadside = 'port'
-        self.smoke = []
 
     def get_targets(self, lookahead=10, range=30):
         """Get a dictionary of potential targets on either side.
@@ -183,13 +183,12 @@ class Ship(Positionable):
             side = 'port' if self.last_broadside == 'starboard' else 'starboard'
 #            print "Haven't fired to", side, "for a while"
 
-        del self.smoke[:]
         m = self.get_matrix()
         for pos, v in self.GUNS[side]:
             wvec = m * v
             wpos = m * pos
             self.world.spawn(Cannonball(wpos, wvec, owner=self))
-            self.smoke.append(spawn_smoke(wpos, wvec))
+            spawn_smoke(wpos, wvec)
         self.last_broadside = side
 
     def update(self, dt):

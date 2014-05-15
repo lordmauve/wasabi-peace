@@ -54,6 +54,26 @@ smoke_particles = particles.create_group(
     texture=load('smoke.png')
 )
 
+splinter_controllers=[
+    controller.Movement(),
+    controller.Lifetime(3),
+    controller.Gravity((0, -2, 0)),
+    controller.Collector(
+        domain=domain.Plane(
+            (0, 0, 0), (0, 1, 0)
+        )
+    )
+]
+
+splinters1 = particles.create_group(
+    controllers=splinter_controllers,
+    texture=load('splinter1.png')
+)
+splinters2 = particles.create_group(
+    controllers=splinter_controllers,
+    texture=load('splinter2.png')
+)
+
 
 def spawn_smoke(pos, vel):
     """Spawn a cannon smoke puff."""
@@ -75,6 +95,28 @@ def spawn_smoke(pos, vel):
         time_to_live=0.1
     )
     smoke_particles.bind_controller(e)
+
+
+def spawn_splinters(pos, vel):
+    """Spawn a cannon smoke puff."""
+    e = StaticEmitter(
+        template=Particle(
+            position=tuple(pos),
+            velocity=tuple(vel * -0.1),
+            size=(0.15, 0.15, 0.15),
+            color=(1, 1, 1, 0.8),
+        ),
+        rotation=domain.Line(
+            (0, 0, -1),
+            (0, 0, 1)
+        ),
+        deviation=Particle(
+            size=(0.05, 0.05, 0.05),
+            velocity=(2.0, 2.0, 2.0),
+        ),
+    )
+    e.emit(10, splinters1)
+    e.emit(10, splinters2)
 
 
 class WakeEmitter(object):

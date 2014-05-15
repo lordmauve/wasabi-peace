@@ -202,11 +202,11 @@
      pagecolor="#000000"
      bordercolor="#666666"
      borderopacity="1.0"
-     inkscape:pageopacity="1"
+     inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:zoom="8"
-     inkscape:cx="78.93872"
-     inkscape:cy="14.998838"
+     inkscape:zoom="4"
+     inkscape:cx="260.98173"
+     inkscape:cy="3.2141756"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -346,6 +346,72 @@
            d="m 130.5198,41.871816 c 3.86215,-6.864939 7.90137,-13.321605 10.90381,-13.556544 3.00245,-0.23494 7.77882,-3.761434 6.91893,-2.612459 -0.85985,1.148987 -6.18533,7.435872 -8.69996,9.690502 -2.51462,2.254627 -9.12278,6.478501 -9.12278,6.478501 z"
            id="path4444"
            inkscape:connector-curvature="0" />
+      </g>
+      <rect
+         style="color:#000000;fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;opacity:0"
+         id="rect4517"
+         width="32"
+         height="32"
+         x="190.41228"
+         y="13.9375" />
+    </g>
+    <g
+       id="g4503"
+       transform="matrix(1.0364372,0,0,1.0364372,-18.023021,-0.44306575)"
+       inkscape:export-filename="/home/mauve/dev/wasabi-peace/assets/textures/splinter1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
+      <path
+         inkscape:connector-curvature="0"
+         id="path4499"
+         d="m 212.66,44.75 7.84,-28 7.84,18.48 z"
+         style="fill:#784421;stroke:none" />
+      <path
+         inkscape:connector-curvature="0"
+         id="path4501"
+         d="m 213.125,44.625 -8.375,-3.5 8.75,-27.25 7.125,3"
+         style="fill:#28170b;stroke:none" />
+    </g>
+    <g
+       id="g4539"
+       transform="translate(-64.5,2.5)"
+       inkscape:export-filename="/home/mauve/dev/wasabi-peace/assets/textures/splinter2.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
+      <rect
+         style="color:#000000;fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;opacity:0"
+         id="rect4519"
+         width="32"
+         height="32"
+         x="303.9375"
+         y="11.625" />
+      <g
+         transform="matrix(0.92086331,0,0,0.92086331,121.968,-1.0368705)"
+         id="g4507">
+        <path
+           sodipodi:nodetypes="cccc"
+           inkscape:connector-curvature="0"
+           id="path4511"
+           d="m 216.75,48.25 -8.375,-3.5 -9.625,-25.625 7.125,3"
+           style="fill:#28170b;stroke:none" />
+        <path
+           sodipodi:nodetypes="cccccc"
+           inkscape:connector-curvature="0"
+           id="path4509"
+           d="M 217.035,48.5 205.78335,22.256011 216.20197,24.621614 220.5,16.75 231.215,40.73 c -4.4383,3.139802 -9.30624,5.419868 -14.18,7.77 z"
+           style="fill:#784421;stroke:none" />
+        <path
+           style="fill:#28170b;stroke:none"
+           d="m 216.375,24.75 -8.375,-3.5 5.625,-7.5 7.125,3"
+           id="path4513"
+           inkscape:connector-curvature="0"
+           sodipodi:nodetypes="cccc" />
+        <path
+           sodipodi:nodetypes="cccc"
+           inkscape:connector-curvature="0"
+           id="path4515"
+           d="m 216.375,24.75 -8.375,-3.5 -9.25,-1.875 7.125,3"
+           style="fill:#d38d5f;stroke:none" />
       </g>
     </g>
   </g>
