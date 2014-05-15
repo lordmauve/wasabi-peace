@@ -1,5 +1,5 @@
 import math
-from math import pow
+from math import pow, sin, cos
 from wasabisg.scenegraph import ModelNode, GroupNode
 from wasabisg.model import Material, Model, Mesh
 from wasabisg.sphere import Sphere as SphereMesh
@@ -10,8 +10,9 @@ from .models import (
     hull_model, foremast_model, mainmast_model, mizzenmast_model,
     cannonball_model
 )
-from .particles import WakeEmitter
 from .physics import Positionable, Sphere, Body, LineSegment
+from .particles import WakeEmitter
+from .sailing import get_sail_power, get_heeling_moment, get_sail_setting
 
 
 class Interpolation(object):
@@ -44,6 +45,29 @@ class CosineInterpolation(Interpolation):
     def interpolate(self, t):
         sin = self.sin(t * self.hpi)
         return sin * sin
+
+
+class InterpolatingController(object):
+    interpolater = CosineInterpolation
+
+    def __init__(self, v, response_time=1.0):
+        self.current = v
+        self.response_time = 1.0
+        self.interpolation = None
+
+    def set(self, v):
+        self.interpolation = self.interpolater(self.current, v, self.response_time)
+
+    @property
+    def target(self):
+        return self.interpolation.tov if self.interpolation else self.current
+
+    def update(self, dt):
+        if self.interpolation is not None:
+            self.current = self.interpolation.get(dt)
+            if self.interpolation.finished():
+                self.current = self.interpolation.tov
+                self.interpolation = None
 
 
 class Cannonball(object):
@@ -110,14 +134,11 @@ class Ship(Positionable):
         self.body = Body(self, self.SHAPES)
 
         self.angle = angle
-        self.helm = 0
-        self._next_helm = None
-        self.speed = 1
+        self.helm = InterpolatingController(0)
+        self.sail = InterpolatingController(1)  # amount of sail we have up
+        self.roll = 0.0
         self.t = 0
         self.last_broadside = 'port'
-
-    def set_helm(self, helm):
-        self._next_helm = CosineInterpolation(self.helm, helm, dur=3)
 
     def get_targets(self, lookahead=10, range=30):
         """Get a dictionary of potential targets on either side.
@@ -171,42 +192,49 @@ class Ship(Positionable):
     def update(self, dt):
         self.t += dt
 
-        # interpolate over the helm input
-        if self._next_helm is not None:
-            self.helm = self._next_helm.get(dt)
-            if self._next_helm.finished():
-                self.helm = self._next_helm.tov
-                self._next_helm = None
+        self.helm.update(dt)
+        self.sail.update(dt)
+
+        # damp roll
+        self.roll *= pow(0.6, dt)
 
         # Compute some bobbing motion
-        roll = 0.05 * math.sin(self.t) + 0.05 * self.helm
+        rollmoment = 0.05 * math.sin(self.t)
         pitch = 0.02 * math.sin(0.31 * self.t)
 
-        # Update ship angle and position
-        self.angle += self.helm * self.speed * 0.05 * dt
+        # Compute the forward vector from the curent heading
         q = Quaternion.new_rotate_axis(self.angle, Vector3(0, 1, 0))
-        accel = q * Vector3(0, 0, 1) * self.speed * dt
+        forward = q * Vector3(0, 0, 1)
+
+        angular_velocity = self.helm.current * min(forward.dot(self.vel), 2) * 0.02
+        angle_to_wind = self.world.wind_angle - self.angle
+        sail_power = get_sail_power(angle_to_wind)
+        heeling_moment = get_heeling_moment(angle_to_wind)
+
+        rollmoment += angular_velocity * 0.5  # lean over from centrifugal force of turn
+        rollmoment -= heeling_moment * 0.05 * self.sail.current  # heel from wind force
+
+        # Update ship angle and position
+        self.angle += angular_velocity * dt
+        accel = forward * self.sail.current * sail_power * 0.5 * dt
         self.vel += accel
-        self.vel *= pow(0.5, dt)  # Drag
+        self.vel *= pow(0.7, dt)  # Drag
         self.pos += self.vel * dt + Vector3(0, -0.5, 0) * self.pos.y * dt
+
+        self.roll += rollmoment * dt
 
         # Apply ship angle and position to model
         self.rot = (
             q *
             Quaternion.new_rotate_axis(pitch, Vector3(1, 0, 0)) *
-            Quaternion.new_rotate_axis(roll, Vector3(0, 0, 1))
+            Quaternion.new_rotate_axis(self.roll, Vector3(0, 0, 1))
         )
         rotangle, (rotx, roty, rotz) = self.rot.get_angle_axis()
         self.model.rotation = (math.degrees(rotangle), rotx, roty, rotz)
         self.model.pos = self.pos
 
         # Adjust sail angle to wind direction
-        # TODO: make world maintain wind state
-        # wind_angle should be relative to the hull
-        wind_angle = -self.angle % (2 * math.pi)
-        if wind_angle > math.pi:
-            wind_angle -= 2 * math.pi
-        sail_angle = math.sin(wind_angle)
+        sail_angle = get_sail_setting(angle_to_wind)
         for sail in self.model.nodes[1:]:
             sail.rotation = math.degrees(sail_angle), 0, 1, 0
 

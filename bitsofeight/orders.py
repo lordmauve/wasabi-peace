@@ -21,7 +21,7 @@ class ShipOrderHelm(object):
         return self.messages[abs(self.strength)].format(self=self)
 
     def act(self, ship):
-        ship.set_helm(self.strength)
+        ship.helm.set(self.strength)
 
 
 class ShipOrderAccelerate(object):
@@ -40,7 +40,7 @@ class ShipOrderAccelerate(object):
         return self.messages[self.strength].format(self=self)
 
     def act(self, ship):
-        ship.speed = min(3, ship.speed + 1)
+        ship.sail.set(min(3, ship.sail.target + 1))
 
 
 class ShipOrderFire(object):
@@ -69,7 +69,7 @@ class ShipOrderDecelerate(ShipOrderAccelerate):
     ]
 
     def act(self, ship):
-        ship.speed = max(0, ship.speed - 1)
+        ship.sail.set(max(0, ship.sail.target - 1))
 
 
 class OrdersQueue(EventDispatcher):
