@@ -299,26 +299,39 @@ def clamp(v, low, high):
     return min(high, max(low, v))
 
 
+def prepare_material(material):
+    out = material.copy()
+    out['Kd'] = _pad(material.get('Kd', (1.0, 1.0, 1.0)), 3)
+    out['Ks'] = _pad(material.get('Ks', (0, 0, 0, 1)))
+    out['Ns'] = max(_to_float(material.get('Ns', 0.0)), 1e-3)
+    out['illum'] = material.get('illum', 1)
+    out['transmit'] = material.get('transmit', 0.0)
+    return out
+
+
 class MaterialGroup(Group):
     def __init__(self, material, parent=None):
         self.material = material
         super(MaterialGroup, self).__init__(parent=parent)
 
-    def prepare_material(self, material):
-        out = material.copy()
-        out['Kd'] = _pad(material.get('Kd', (1.0, 1.0, 1.0)), 3)
-        out['Ks'] = _pad(material.get('Ks', (0, 0, 0, 1)))
-        out['Ns'] = max(_to_float(material.get('Ns', 0.0)), 1e-3)
-        out['illum'] = material.get('illum', 1)
-        out['transmit'] = material.get('transmit', 0.0)
-        return out
-
     def set_state(self):
         super(MaterialGroup, self).set_state()
         if activeshader:
-            activeshader.set_material(self.prepare_material(self.material))
+            activeshader.set_material(prepare_material(self.material))
 
     def unset_state(self):
         if activeshader:
             activeshader.unset_material(self.material)
         super(MaterialGroup, self).unset_state()
+
+
+def set_material(material):
+    """Configure the current shader with the given material."""
+    if activeshader:
+        activeshader.set_material(material)
+
+
+def unset_material(material):
+    """Unset the current material."""
+    if activeshader:
+        activeshader.unset_material(material)

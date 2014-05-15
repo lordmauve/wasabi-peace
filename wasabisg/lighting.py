@@ -13,7 +13,7 @@ class BaseLight(object):
         self._colour = tuple(c) + (1.0,) * (4 - len(c))
 
     def __iter__(self):
-        yield Matrix4.identity(), self
+        yield Matrix4.new_identity(), self
 
     def update(self, dt):
         pass

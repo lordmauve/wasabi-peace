@@ -30,6 +30,9 @@ class ParticleSystemNode(object):
         self.textures.add(texture)  # hold a reference to this, otherwise it will get deleted
         return particlegroup
 
+    def __iter__(self):
+        return iter([])
+
     def draw(self, camera):
         if self.group:
             self.group.set_state_recursive()

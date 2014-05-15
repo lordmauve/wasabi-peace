@@ -18,6 +18,17 @@ import pyglet.resource
 DEFAULT_FRAMERATE = 40
 
 
+class DrawableList(object):
+    def __init__(self, count, mode, group, indices, *data):
+        self.list = pyglet.graphics.vertex_list_indexed(
+            count, indices, *data
+        )
+        self.mode = mode
+
+    def draw(self):
+        self.list.draw(self.mode)
+
+
 class Mesh(object):
     """A bunch of geometry, with linked materials.
 
@@ -31,7 +42,11 @@ class Mesh(object):
         self.material = material
         self.indices = indices
 
-    def to_list(self, batch, group=None):
+    def to_list(self, batch=None, group=None):
+        if batch is None:
+            mklist = DrawableList
+        else:
+            mklist = batch.add_indexed
         l = len(self.vertices) / 3
 
         data = [
@@ -48,7 +63,7 @@ class Mesh(object):
                 "len(texcoords) != len(vertices)"
             data.append(('t2f', self.texcoords))
 
-        self.list = batch.add_indexed(
+        self.list = mklist(
             l,
             self.mode,
             group,

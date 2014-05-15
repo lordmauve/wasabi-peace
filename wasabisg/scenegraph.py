@@ -231,17 +231,6 @@ class Scene(object):
         directly is supported as a convenience.
 
         """
-        if isinstance(obj, Mesh):
-            model = Model(meshes=[obj])
-            model = self.prepare_model(model)
-            obj = ModelNode(model)
-        elif isinstance(obj, Model):
-            model = self.prepare_model(obj)
-            obj = ModelNode(model)
-        elif isinstance(obj, ModelNode):
-            obj.model_instance = self.prepare_model(obj.model_instance)
-        elif isinstance(obj, GroupNode):
-            self.prepare_group(obj)
         if obj in self.objects:
             return
         self.objects.append(obj)

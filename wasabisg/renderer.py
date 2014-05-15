@@ -3,7 +3,7 @@ from itertools import chain
 from pyglet.graphics import Batch
 from OpenGL.GL import *
 
-from .shader import Shader, MaterialGroup
+from .shader import Shader, set_material, prepare_material, unset_material
 from .lighting import Light, Sunlight, BaseLight
 
 
@@ -22,12 +22,10 @@ class RenderPass(object):
     def filter(self, node):
         return self.transparency == node.is_transparent()
 
-    def render(self, camera, objects):
+    def render(self, camera, lights, batches):
         if self.group:
             self.group.set_state_recursive()
-        for o in objects:
-            if self.filter(o):
-                o.draw(camera)
+        draw(batches)
         if self.group:
             self.group.unset_state_recursive()
 
@@ -180,20 +178,19 @@ class LightingPass(object):
     def transform_lights(self, camera, lights):
         out = []
         view_matrix = camera.get_view_matrix()
-        for l in lights:
+        for m, l in lights:
+            mv = view_matrix * m
             if isinstance(l, Sunlight):
-                x, y, z = (view_matrix * l.direction).normalized()
+                x, y, z = (mv * l.direction).normalized()
                 out.append((x, y, z, 0))
             else:
-                x, y, z = view_matrix * l.pos
+                x, y, z = mv * l.pos
                 out.append((x, y, z, 1))
         return out
 
-    def render(self, camera, objects):
-        lights = [o for o in objects if isinstance(o, BaseLight)]
-
+    def render(self, camera, lights, batches):
         glPushAttrib(GL_ALL_ATTRIB_BITS)
-        fbo = self.get_fbo(camera.viewport)
+        #fbo = self.get_fbo(camera.viewport)
 
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
@@ -209,8 +206,8 @@ class LightingPass(object):
         glPolygonOffset(0.01, 1)
         glDepthMask(GL_TRUE)
 
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo)
-        glClear(GL_DEPTH_BUFFER_BIT)
+        #glBindFramebuffer(GL_FRAMEBUFFER, fbo)
+        #glClear(GL_DEPTH_BUFFER_BIT)
         if not lights:
             return
         lighting_shader.bind()
@@ -220,19 +217,18 @@ class LightingPass(object):
             ls = lights[:8]
             lights = lights[8:]
 
-            lighting_shader.uniform4fv('colours', [l.colour for l in ls])
+            colours, intensities, falloffs = zip(*[
+                (l.colour, l.intensity, l.falloff) for m, l in ls
+            ])
+
+            lighting_shader.uniform4fv('colours', colours)
             lighting_shader.uniform4fv('positions',
                 self.transform_lights(camera, ls)
             )
-            lighting_shader.uniform1fv(
-                'intensities', [l.intensity for l in ls])
-            lighting_shader.uniform1fv(
-                'falloffs', [l.falloff for l in ls])
+            lighting_shader.uniform1fv('intensities', intensities)
+            lighting_shader.uniform1fv('falloffs', falloffs)
             lighting_shader.uniformi('num_lights', len(ls))
-            for o in objects:
-                if o.is_transparent():
-                    continue
-                o.draw(camera)
+            draw(batches)
 
             # Subsequent passes are drawn without writing to the z-buffer
             glDisable(GL_POLYGON_OFFSET_FILL)
@@ -306,9 +302,6 @@ class CompositePass(object):
     def __init__(self, lightingpass):
         self.lightingpass = lightingpass
 
-    def filter(self, node):
-        return not node.is_transparent()
-
     def render(self, camera, lights, batches):
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
@@ -318,12 +311,27 @@ class CompositePass(object):
             'lighting', 0, self.lightingpass.lightbuf
         )
 
-        for o in objects:
-            if self.filter(o):
-                o.draw(camera)
-
+        draw(batches)
         composite_shader.unbind()
 
+
+def draw(batches):
+    """Given batches of the form
+
+        [(material, [(mesh, [matrix, ...]), ...]), ...]
+
+    draw them all.
+
+    """
+    for material, meshes in batches:
+        set_material(material)
+        for mesh, matrices in meshes:
+            for m in matrices:
+                glPushMatrix()
+                glMultMatrixf(m[:])
+                mesh.draw()
+                glPopMatrix()
+    unset_material(material)
 
 class LightingAccumulationRenderer(object):
     def __init__(self):
@@ -331,13 +339,14 @@ class LightingAccumulationRenderer(object):
         self.composite = CompositePass(self.lighting)
         self.passes = [
             self.lighting,
-            self.composite,
+            #self.composite,
             RenderPass(
                 transparency=True
             )
         ]
 
     def prepare_model(self, model):
+        return
         if hasattr(model, 'draw'):
             return model
         batch = Batch()
@@ -349,6 +358,7 @@ class LightingAccumulationRenderer(object):
         return model
 
     def prepare_mesh(self, mesh, batch):
+        return
         mat = mesh.material
         mat.load_textures()
 
@@ -356,24 +366,44 @@ class LightingAccumulationRenderer(object):
         mesh.list = l
 
     def optimise_drawables(self, drawables):
+        # Organise the drawables
         lights = []
         batches = defaultdict(lambda: defaultdict(list))
-
+        mesh_lists = {}
+        materials = {}
         for m, d in drawables:
-            if isinstance(d, Light):
+            if isinstance(d, BaseLight):
                 lights.append((m, d))
             else:
-                matid = id(d.material)
-                meshid = id(d)
+                mesh = d
+                material = mesh.material
+                matid = id(material)
+                meshid = id(mesh)
 
-                if not hasattr(mesh, 'list'):
-                    l = mesh.list = mesh.to_list()
-                else:
-                    l = mesh.list
+                if matid not in materials:
+                    materials[matid] = prepare_material(mesh.material)
 
-                batches[matid][meshid].append(m, l)
+                if meshid not in mesh_lists:
+                    if not hasattr(mesh, 'list'):
+                        l = mesh.list = mesh.to_list()
+                    else:
+                        l = mesh.list
+                    mesh_lists[meshid] = l
 
-        return lights, batches
+                batches[matid][meshid].append(m)
+
+        # Assemble into a list structure of the form
+        # [(material, [(mesh, [matrix, ...]), ...]), ...]
+        bs = []
+        for matid, meshes in batches.iteritems():
+            outmeshes = []
+            for meshid, matrices in meshes.iteritems():
+                outmeshes.append(
+                    (mesh_lists[meshid], matrices)
+                )
+            bs.append((materials[matid], outmeshes))
+
+        return lights, bs
 
     def render(self, scene, camera):
         self.lighting.ambient = scene.ambient
@@ -389,7 +419,7 @@ class LightingAccumulationRenderer(object):
         camera.set_matrix()
 
         drawables = chain.from_iterable(iter(o) for o in scene.objects)
-        lights, batches = self.optimise_drawables()
+        lights, batches = self.optimise_drawables(drawables)
 
         for p in self.passes:
             p.render(camera, lights, batches)
