@@ -7,7 +7,8 @@ from wasabisg.sphere import Sphere as SphereMesh
 from euclid import Point3, Vector3, Quaternion, Matrix4
 
 from .models import (
-    ship_model, cannonball_model
+    hull_model, foremast_model, mainmast_model, mizzenmast_model,
+    cannonball_model
 )
 from .particles import WakeEmitter
 from .physics import Positionable, Sphere, Body, LineSegment
@@ -95,9 +96,16 @@ class Ship(Positionable):
         for z in xrange(-3, 4)
     ]
 
+    WIND = Vector3(1, 0, 0)
+
     def __init__(self, pos=Point3(0, 0, 0), angle=0):
         super(Ship, self).__init__(pos)
-        self.model = ModelNode(ship_model)
+        self.model = GroupNode([
+            ModelNode(hull_model),
+            ModelNode(foremast_model, pos=Point3(0, 1.18, 2.67)),
+            ModelNode(mainmast_model, pos=Point3(0, 1.08, 0.61)),
+            ModelNode(mizzenmast_model, pos=Point3(0, 1.18, -1.2)),
+        ])
         self.emitters = [WakeEmitter(self)]
         self.body = Body(self, self.SHAPES)
 
@@ -191,3 +199,14 @@ class Ship(Positionable):
         rotangle, (rotx, roty, rotz) = self.rot.get_angle_axis()
         self.model.rotation = (math.degrees(rotangle), rotx, roty, rotz)
         self.model.pos = self.pos
+
+        # Adjust sail angle to wind direction
+        # TODO: make world maintain wind state
+        # wind_angle should be relative to the hull
+        wind_angle = -self.angle % (2 * math.pi)
+        if wind_angle > math.pi:
+            wind_angle -= 2 * math.pi
+        sail_angle = math.sin(wind_angle)
+        for sail in self.model.nodes[1:]:
+            sail.rotation = math.degrees(sail_angle), 0, 1, 0
+
