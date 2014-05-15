@@ -66,6 +66,7 @@ uniform vec4 ambient;
 uniform float dissolve;
 uniform float specular_exponent;
 uniform float transmit;
+uniform int illum;
 
 vec3 calc_light(in vec3 frag_normal, in int lnum, in vec3 diffuse) {
     vec4 light = positions[lnum];
@@ -112,10 +113,14 @@ void main (void) {
     vec4 mapcolour = texture2D(diffuse_tex, uv);
     vec3 basecolour = mapcolour.rgb * diffuse_colour;
 
-    colour += basecolour * ambient.rgb;
+    if (illum == 0) {
+        colour = basecolour;
+    } else {
+        colour += basecolour * ambient.rgb;
 
-    for (i = 0; i < num_lights; i++) {
-        colour += calc_light(n, i, basecolour);
+        for (i = 0; i < num_lights; i++) {
+            colour += calc_light(n, i, basecolour);
+        }
     }
     gl_FragColor = vec4(colour.xyz, mapcolour.a * dissolve);
 }
@@ -127,6 +132,7 @@ lighting_shader.bind_material_to_uniformf('Ks', 'specular')
 lighting_shader.bind_material_to_uniformf('Ns', 'specular_exponent')
 lighting_shader.bind_material_to_uniformf('d', 'dissolve')
 lighting_shader.bind_material_to_uniformf('transmit', 'transmit')
+lighting_shader.bind_material_to_uniformi('illum', 'illum')
 
 
 class LightingPass(object):
@@ -191,7 +197,7 @@ class LightingPass(object):
         lights = [o for o in objects if isinstance(o, BaseLight)]
 
         glPushAttrib(GL_ALL_ATTRIB_BITS)
-        fbo = self.get_fbo(camera.viewport)
+        #fbo = self.get_fbo(camera.viewport)
 
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
@@ -207,7 +213,7 @@ class LightingPass(object):
         glPolygonOffset(0.01, 1)
         glDepthMask(GL_TRUE)
 
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo)
+        #glBindFramebuffer(GL_FRAMEBUFFER, fbo)
         glClear(GL_DEPTH_BUFFER_BIT)
         if not lights:
             return
@@ -244,6 +250,9 @@ class LightingPass(object):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         glPopAttrib()
+
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
 
     def __del__(self):
         if self.fbo:
@@ -326,10 +335,10 @@ class CompositePass(object):
 class LightingAccumulationRenderer(object):
     def __init__(self):
         self.lighting = LightingPass()
-        self.composite = CompositePass(self.lighting)
+#        self.composite = CompositePass(self.lighting)
         self.passes = [
             self.lighting,
-            self.composite,
+            #self.composite,
             RenderPass(
                 transparency=True
             )
