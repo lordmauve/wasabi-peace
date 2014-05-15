@@ -79,4 +79,4 @@ class WakeEmitter(object):
             e.template.position = px, 0.1, pz
             vx, _, vz = m * v
             e.template.velocity = vx, 0.0, vz
-            e.rate = self.ship.speed * r
+            e.rate = self.ship.vel.magnitude() * r

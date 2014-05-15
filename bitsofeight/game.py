@@ -45,6 +45,7 @@ class World(EventDispatcher):
         self.objects = []
         self.emitters = []
         self.physics = Physics()
+        self.wind_angle = 0.0
 
         self.create_scene()
         self.camera = Camera(
