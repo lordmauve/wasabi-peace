@@ -1,3 +1,5 @@
+from collections import defaultdict
+from itertools import chain
 from pyglet.graphics import Batch
 from OpenGL.GL import *
 
@@ -307,7 +309,7 @@ class CompositePass(object):
     def filter(self, node):
         return not node.is_transparent()
 
-    def render(self, camera, objects):
+    def render(self, camera, lights, batches):
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
         composite_shader.bind()
@@ -353,6 +355,26 @@ class LightingAccumulationRenderer(object):
         l = mesh.to_list(batch, group=MaterialGroup(mat))
         mesh.list = l
 
+    def optimise_drawables(self, drawables):
+        lights = []
+        batches = defaultdict(lambda: defaultdict(list))
+
+        for m, d in drawables:
+            if isinstance(d, Light):
+                lights.append((m, d))
+            else:
+                matid = id(d.material)
+                meshid = id(d)
+
+                if not hasattr(mesh, 'list'):
+                    l = mesh.list = mesh.to_list()
+                else:
+                    l = mesh.list
+
+                batches[matid][meshid].append(m, l)
+
+        return lights, batches
+
     def render(self, scene, camera):
         self.lighting.ambient = scene.ambient
 
@@ -365,6 +387,10 @@ class LightingAccumulationRenderer(object):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         camera.set_matrix()
+
+        drawables = chain.from_iterable(iter(o) for o in scene.objects)
+        lights, batches = self.optimise_drawables()
+
         for p in self.passes:
-            p.render(camera, scene.objects)
+            p.render(camera, lights, batches)
         glPopAttrib()

@@ -97,10 +97,8 @@ class Model(object):
     def get_instance(self):
         return self
 
-#    def draw(self):
-#        # This is renderer-specific and belongs elsewhere
-#        with mtllib(self.materials):
-#            self.batch.draw()
+    def get_meshes(self):
+        return self.meshes
 
 
 class AnimatedModelInstance(object):
@@ -144,6 +142,9 @@ class AnimatedModelInstance(object):
 
     def draw(self):
         self.model.frames[self.currentframe].draw()
+
+    def get_meshes(self):
+        return self.model.frames[self.currentframe].meshes
 
 
 class AnimatedModel(object):

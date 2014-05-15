@@ -1,4 +1,4 @@
-from euclid import Point3, Vector3
+from euclid import Point3, Vector3, Matrix4
 
 
 class BaseLight(object):
@@ -11,6 +11,9 @@ class BaseLight(object):
     @colour.setter
     def set_colour(self, c):
         self._colour = tuple(c) + (1.0,) * (4 - len(c))
+
+    def __iter__(self):
+        yield Matrix4.identity(), self
 
     def update(self, dt):
         pass

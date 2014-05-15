@@ -1,3 +1,4 @@
+from math import radians, degrees
 import itertools
 import pyglet
 
@@ -46,7 +47,23 @@ class GLStateGroup(Group):
             glDepthMask(GL_TRUE)
 
 
-class ModelNode(object):
+class Orientable(object):
+    @property
+    def rotation(self):
+        return (degrees(self._rotation[0]), ) + self._rotation[1:]
+
+    @rotation.setter
+    def rotation(self, rotation):
+        self._rotation = (radians(rotation[0]), ) + rotation[1:]
+
+    def get_matrix(self):
+        angle, x, y, z = self._rotation
+        r = Matrix4.new_rotate_axis(angle, Vector3(x, y, z))
+        t = Matrix4.new_translate(*self.pos)
+        return t * r
+
+
+class ModelNode(Orientable):
     """Draw a model at a point in space, with a rotation."""
     def __init__(self,
             model,
@@ -66,6 +83,15 @@ class ModelNode(object):
     def is_transparent(self):
         return self.transparent
 
+    def __iter__(self):
+        """Iterate over matrix, drawable pairs in this model."""
+        m = self.get_matrix()
+        for mesh in self.model_instance.meshes:
+            yield m, mesh
+
+    def get_lights(self):
+        return None
+
     def draw(self, camera):
         if self.group:
             self.group.set_state_recursive()
@@ -78,7 +104,7 @@ class ModelNode(object):
             self.group.unset_state_recursive()
 
 
-class GroupNode(object):
+class GroupNode(Orientable):
     """Group a bunch of other nodes."""
     def __init__(self,
             nodes,
@@ -96,6 +122,13 @@ class GroupNode(object):
 
     def is_transparent(self):
         return False
+
+    def __iter__(self):
+        """Iterate over matrix, drawable pairs in this model."""
+        m = self.get_matrix()
+        for node in self.nodes:
+            for n, d in node:
+                yield m * n, d
 
     def draw(self, camera):
         if self.group:
