@@ -3,6 +3,7 @@ from euclid import Point3, Vector3
 from lepton import Particle
 from lepton.emitter import StaticEmitter
 from lepton import controller
+from lepton import domain
 from wasabisg.particles import ParticleSystemNode
 
 
@@ -34,6 +35,48 @@ wake_particles = particles.create_group(
 )
 
 
+smoke_particles = particles.create_group(
+    controllers=[
+        controller.Movement(),
+        controller.Lifetime(8),
+        controller.Fader(
+            start_alpha=0.0,
+            max_alpha=0.2,
+            end_alpha=0.0,
+            fade_in_end=0.0,
+            fade_out_start=0.5,
+            fade_out_end=8.0
+        ),
+        controller.Growth(
+            growth=2,
+        )
+    ],
+    texture=load('smoke.png')
+)
+
+
+def spawn_smoke(pos, vel):
+    """Spawn a cannon smoke puff."""
+    e = StaticEmitter(
+        template=Particle(
+            position=tuple(pos),
+            velocity=tuple(vel * 0.1),
+            size=(0.2, 0.2, 0.2),
+            color=(1, 1, 1, 0.2),
+        ),
+        rotation=domain.Line(
+            (0, 0, -1),
+            (0, 0, 1)
+        ),
+        deviation=Particle(
+            velocity=(1.0, 1.0, 1.0),
+        ),
+        rate=100,
+        time_to_live=0.1
+    )
+    smoke_particles.bind_controller(e)
+
+
 class WakeEmitter(object):
     group = wake_particles
 
@@ -52,11 +95,12 @@ class WakeEmitter(object):
                 template=Particle(
                     position=tuple(p),
                     velocity=tuple(v),
-                    size=(0.2, 0.2, 0.2),
+                    size=(0.2, 0.2, 0.0),
                     color=(1, 1, 1, 0.2),
                 ),
                 deviation=Particle(
                     position=(0.02, 0.0, 0.02) if i < 2 else (0.2, 0.0, 0.2),
+                    size=(0.0, 0.07, 0.0),
                     velocity=(0.04, 0.0, 0.04),
                 ),
                 rate=5 if i < 2 else 20
