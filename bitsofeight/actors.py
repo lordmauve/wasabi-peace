@@ -2,6 +2,7 @@ import math
 from math import pow, sin, cos
 from wasabisg.scenegraph import ModelNode, GroupNode
 from wasabisg.model import Material, Model, Mesh
+from wasabisg.lighting import Light
 from wasabisg.sphere import Sphere as SphereMesh
 
 from euclid import Point3, Vector3, Quaternion, Matrix4
@@ -103,6 +104,23 @@ class Cannonball(object):
             self.model.pos = self.pos
 
 
+class MuzzleFlash(object):
+    def __init__(self, pos):
+        self.model = Light(
+            pos,
+            colour=(1, 0.6, 0.3, 1.0),
+            intensity=10,
+            falloff=0.5
+        )
+        self.age = 0
+
+    def update(self, dt):
+        self.age += dt
+        if self.age > 1.0:
+            self.world.destroy(self)
+        self.model.intensity *= pow(0.01, dt)
+
+
 class Ship(Positionable):
     # Y up, -z forward
     GUNS = {
@@ -189,6 +207,7 @@ class Ship(Positionable):
             wpos = m * pos
             self.world.spawn(Cannonball(wpos, wvec, owner=self))
             spawn_smoke(wpos, wvec)
+        self.world.spawn(MuzzleFlash(wpos))
         self.last_broadside = side
 
     def update(self, dt):
