@@ -13,6 +13,8 @@ from ws4py.server.wsgiutils import WebSocketWSGIApplication
 
 TEMPLATE_ROOT = os.path.dirname(os.path.abspath(__file__))
 
+orders_queue = None
+
 
 def not_found(environ, start_response):
     """Called if no URL matches."""
@@ -57,7 +59,18 @@ class EchoWebSocket(WebSocket):
         """
         self.send(message.data, message.is_binary)
 
-websocket_application = WebSocketWSGIApplication(handler_cls=EchoWebSocket)
+
+class GameWebSocket(WebSocket):
+    def received_message(self, message):
+        global orders_queue
+        command = message.data
+        #orders_queue.put(command)
+
+        response = "Command sent: %s" % command
+        self.send(response, False)
+
+
+websocket_application = WebSocketWSGIApplication(handler_cls=GameWebSocket)
 
 # map urls to functions
 urls = [
@@ -66,8 +79,17 @@ urls = [
 ]
 
 
-server = make_server('127.0.0.1', 9000, server_class=WSGIServer,
-                     handler_class=WebSocketWSGIRequestHandler,
-                     app=application)
-server.initialize_websockets_manager()
-server.serve_forever()
+def serve(host, port, orders_q):
+    global orders_queue
+    orders_queue = orders_q
+
+    # start server
+    server = make_server(host, port, server_class=WSGIServer,
+                         handler_class=WebSocketWSGIRequestHandler,
+                         app=application)
+    server.initialize_websockets_manager()
+    server.serve_forever()
+
+
+if __name__ == '__main__':
+    serve('127.0.0.1', 9000)

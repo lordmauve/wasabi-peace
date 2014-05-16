@@ -2,6 +2,7 @@ import os.path
 import pyglet
 import random
 import math
+import threading
 from pyglet.event import EventDispatcher
 
 from euclid import Point3, Vector3
@@ -33,7 +34,10 @@ from .actors import Ship
 from .particles import particles
 from .physics import Physics
 from .sea import sea_shader, SeaNode
+from .server import serve
 
+SERVER_HOST = '127.0.0.1'
+SERVER_PORT = 9000
 
 WIDTH = 1024
 HEIGHT = 600
@@ -308,6 +312,13 @@ def main():
         pr.runcall(pyglet.app.run)
         pr.print_stats('cumulative')
     else:
+        # start the command websockets server in the background
+        com_thread = threading.Thread(
+                        target=serve,
+                        args=(SERVER_HOST, SERVER_PORT, game.gamestate.orders_queue))
+        com_thread.daemon = True
+        com_thread.start()
+
         pyglet.app.run()
 
 
