@@ -105,6 +105,9 @@ class World(EventDispatcher):
             ambient=(0.2, 0.2, 0.2, 1.0),
         )
 
+        for m in Ship.MODELS:
+            self.scene.prepare_model(m)
+
         # Add the particle system
         self.scene.add(particles)
 

@@ -1,3 +1,4 @@
+from itertools import product
 from euclid import Vector3
 from wasabisg.loaders.objloader import ObjFileLoader
 from wasabisg.model import Material, Model, Mesh
@@ -9,10 +10,13 @@ from .sea import sea_shader
 
 model_loader = ObjFileLoader()
 hull_model = model_loader.load_obj('assets/models/hull.obj')
-foremast_model = model_loader.load_obj('assets/models/foremast.obj')
-mainmast_model = model_loader.load_obj('assets/models/mainmast.obj')
-mizzenmast_model = model_loader.load_obj('assets/models/mizzenmast.obj')
 skydome = model_loader.load_obj('assets/models/skydome.obj')
+
+mast_models = [
+    model_loader.load_obj('assets/models/%s%s.obj' % (mast, state))
+    for mast in ['foremast', 'mainmast', 'mizzenmast']
+    for state in ['-furled', '-half', '']
+]
 
 sea_model = Model(meshes=[
     Plane(

@@ -8,8 +8,7 @@ from wasabisg.sphere import Sphere as SphereMesh
 from euclid import Point3, Vector3, Quaternion, Matrix4
 
 from .models import (
-    hull_model, foremast_model, mainmast_model, mizzenmast_model,
-    cannonball_model
+    hull_model, mast_models, cannonball_model
 )
 from .physics import Positionable, Sphere, Body, LineSegment
 from .particles import WakeEmitter, spawn_smoke, spawn_splinters
@@ -141,13 +140,15 @@ class Ship(Positionable):
 
     WIND = Vector3(1, 0, 0)
 
+    MODELS = mast_models
+
     def __init__(self, pos=Point3(0, 0, 0), angle=0):
         super(Ship, self).__init__(pos)
         self.model = GroupNode([
             ModelNode(hull_model),
-            ModelNode(foremast_model, pos=Point3(0, 1.18, 2.67)),
-            ModelNode(mainmast_model, pos=Point3(0, 1.08, 0.61)),
-            ModelNode(mizzenmast_model, pos=Point3(0, 1.18, -1.2)),
+            ModelNode(self.MODELS[0], pos=Point3(0, 1.18, 2.67)),
+            ModelNode(self.MODELS[3], pos=Point3(0, 1.08, 0.61)),
+            ModelNode(self.MODELS[6], pos=Point3(0, 1.18, -1.2)),
         ])
         self.emitters = [WakeEmitter(self)]
         self.body = Body(self, self.SHAPES)
@@ -210,11 +211,36 @@ class Ship(Positionable):
         self.world.spawn(MuzzleFlash(wpos))
         self.last_broadside = side
 
+    def update_masts(self, sail):
+        hull, foremast, mainmast, mizzenmast = self.model.nodes
+        if sail < 0.7:
+            foremast.model_instance = self.MODELS[0]
+        elif sail < 2.3:
+            foremast.model_instance = self.MODELS[1]
+        else:
+            foremast.model_instance = self.MODELS[2]
+
+        if sail < 0.5:
+            mainmast.model_instance = self.MODELS[3]
+        elif sail < 1.5:
+            mainmast.model_instance = self.MODELS[4]
+        else:
+            mainmast.model_instance = self.MODELS[5]
+
+        if sail < 0.8:
+            mizzenmast.model_instance = self.MODELS[6]
+        elif sail < 2.0:
+            mizzenmast.model_instance = self.MODELS[7]
+        else:
+            mizzenmast.model_instance = self.MODELS[8]
+
     def update(self, dt):
         self.t += dt
 
         self.helm.update(dt)
         self.sail.update(dt)
+
+        self.update_masts(self.sail.current)
 
         # damp roll
         self.roll *= pow(0.6, dt)
