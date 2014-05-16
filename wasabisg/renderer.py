@@ -181,23 +181,10 @@ class LightingPass(object):
             "Framebuffer is not complete!"
         return self.fbo
 
-    def transform_lights(self, camera, lights):
-        out = []
-        view_matrix = camera.get_view_matrix()
-        for l in lights:
-            if isinstance(l, Sunlight):
-                x, y, z = (view_matrix * l.direction).normalized()
-                out.append((x, y, z, 0))
-            else:
-                x, y, z = view_matrix * l.pos
-                out.append((x, y, z, 1))
-        return out
-
     def render(self, camera, objects):
         lights = [o for o in objects if isinstance(o, BaseLight)]
         glPushAttrib(GL_ALL_ATTRIB_BITS)
         glClear(GL_DEPTH_BUFFER_BIT)
-
 
         standard_objects = []
         shader_objects = []
@@ -211,7 +198,7 @@ class LightingPass(object):
         self.render_objects(camera, lights, standard_objects, shader=lighting_shader)
 
         for o in shader_objects:
-                self.render_objects(camera, lights, [o], shader=o.shader)
+            self.render_objects(camera, lights, [o], shader=o.shader)
 
         glPopAttrib()
 
@@ -240,15 +227,19 @@ class LightingPass(object):
 
         shader.bind()
         shader.uniformf('ambient', *self.ambient)
+        view_matrix = camera.get_view_matrix()
 
         while lights:
             ls = lights[:8]
             lights = lights[8:]
 
+            light_pos = []
+            for l in ls:
+                x, y, z = view_matrix * l._pos
+                light_pos.append((x, y, z, l.w))
+
             shader.uniform4fv('colours', [l.colour for l in ls])
-            shader.uniform4fv('positions',
-                self.transform_lights(camera, ls)
-            )
+            shader.uniform4fv('positions', light_pos)
             shader.uniform1fv(
                 'intensities', [l.intensity for l in ls])
             shader.uniform1fv(
@@ -256,6 +247,9 @@ class LightingPass(object):
             shader.uniformi('num_lights', len(ls))
             for o in objects:
                 o.draw(camera)
+
+            if not lights:
+                break
 
             # Subsequent passes are drawn without writing to the z-buffer
             glDisable(GL_POLYGON_OFFSET_FILL)
@@ -267,7 +261,6 @@ class LightingPass(object):
         glDepthMask(GL_TRUE)
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
 
     def __del__(self):
         if self.fbo:
