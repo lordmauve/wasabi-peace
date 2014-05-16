@@ -53,8 +53,14 @@ class World(EventDispatcher):
             pos=Point3(10, 5, 10),
             look_at=Point3(0, 1, 0),
             width=WIDTH,
-            height=HEIGHT
+            height=HEIGHT,
+            fov=90
         )
+        self.t = 0.0
+        self.clock = pyglet.clock.Clock(time_function=self.time)
+
+    def time(self):
+        return self.t
 
     def spawn(self, obj):
         self.objects.append(obj)
@@ -92,6 +98,8 @@ class World(EventDispatcher):
 
     def update(self, dt):
         """Update the world through the given time step (in seconds)."""
+        self.t += dt
+        self.clock.tick()
         for e in self.emitters:
             e.update()
         particles.update(dt)
@@ -155,9 +163,9 @@ class ChaseCamera(object):
         self.ship = ship
 
     def update(self, dt):
-        self.camera.look_at = self.ship.pos
+        self.camera.look_at = self.ship.pos + Vector3(0, 2, 0)
         m = self.ship.get_matrix()
-        self.camera.pos = m * Point3(0, 6, -16)
+        self.camera.pos = m * Point3(0, 5, -10)
 
 
 class SideCamera(ChaseCamera):
