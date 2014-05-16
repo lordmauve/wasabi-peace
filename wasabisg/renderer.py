@@ -198,13 +198,19 @@ class LightingPass(object):
         glPushAttrib(GL_ALL_ATTRIB_BITS)
         glClear(GL_DEPTH_BUFFER_BIT)
 
-        standard_objects = [
-            o for o in objects if not o.is_transparent() or hasattr(o, 'shader')
-        ]
+
+        standard_objects = []
+        shader_objects = []
+        for o in objects:
+            if o.is_transparent():
+                continue
+            if hasattr(o, 'shader'):
+                shader_objects.append(o)
+            else:
+                standard_objects.append(o)
         self.render_objects(camera, lights, standard_objects, shader=lighting_shader)
 
-        for o in objects:
-            if not o.is_transparent() and hasattr(o, 'shader'):
+        for o in shader_objects:
                 self.render_objects(camera, lights, [o], shader=o.shader)
 
         glPopAttrib()
