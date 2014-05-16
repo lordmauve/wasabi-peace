@@ -46,6 +46,7 @@ class Shader(object):
     def __init__(self, vert='', frag='', geom='', reserved_textures=0, name=''):
         self.uniform_bindings = {}
         self.texture_bindings = {}
+        self.locations = {}
         self.name = name
 
         # Number of texture units not used for material maps
@@ -146,64 +147,79 @@ class Shader(object):
         glUseProgram(0)
         activeshader = None
 
-    # upload a floating point uniform
-    # this program must be currently bound
-    def uniformf(self, name, *vals):
-        # check there are 1-4 values
-        if len(vals) in range(1, 5):
-            # select the correct function
-            {
-                1: glUniform1f,
-                2: glUniform2f,
-                3: glUniform3f,
-                4: glUniform4f
-                # retrieve the uniform location, and set
-            }[len(vals)](glGetUniformLocation(self.handle, name), *vals)
+    UNIFORMFS = [
+        None,
+        glUniform1f,
+        glUniform2f,
+        glUniform3f,
+        glUniform4f
+    ]
+    UNIFORMIS = [
+        None,
+        glUniform1i,
+        glUniform2i,
+        glUniform3i,
+        glUniform4i
+    ]
 
-    # upload an integer uniform
-    # this program must be currently bound
+    def getUniformLocation(self, name):
+        if name in self.locations:
+            return self.locations[name]
+        loc = self.locations[name] = glGetUniformLocation(self.handle, name)
+        return loc
+
+    def uniformf(self, name, *vals):
+        """Upload a floating point uniform
+
+        This program must be currently bound.
+        """
+        assert len(vals) in range(1, 5)
+        f = self.UNIFORMFS[len(vals)]
+        loc = self.getUniformLocation(name)
+        f(loc, *vals)
+
     def uniformi(self, name, *vals):
-        # check there are 1-4 values
-        if len(vals) in range(1, 5):
-            # select the correct function
-            {
-                1: glUniform1i,
-                2: glUniform2i,
-                3: glUniform3i,
-                4: glUniform4i
-                # retrieve the uniform location, and set
-            }[len(vals)](glGetUniformLocation(self.handle, name), *vals)
+        """Upload an integer uniform
+
+        This program must be currently bound.
+        """
+        assert len(vals) in range(1, 5)
+        assert len(vals) in range(1, 5)
+        f = self.UNIFORMIS[len(vals)]
+        loc = self.getUniformLocation(name)
+        f(loc, *vals)
 
     # upload a uniform matrix
     # works with matrices stored as lists,
     # as well as euclid matrices
     def uniform_matrixf(self, name, mat):
         # obtian the uniform location
-        loc = glGetUniformLocation(self.handle, name)
+        loc = selg.getUniformLocation(name)
         # uplaod the 4x4 floating point matrix
         glUniformMatrix4fv(loc, 1, False, (c_float * 16)(*mat))
 
     def uniform1fv(self, name, values):
         """Pass an array of values"""
-        loc = glGetUniformLocation(self.handle, name)
-        arr = (c_float * len(values))(*values)
-        glUniform1fv(loc, len(values), arr)
+        loc = self.getUniformLocation(name)
+        l = len(values)
+        arr = (c_float * l)(*values)
+        glUniform1fv(loc, l, arr)
 
     def uniform2fv(self, name, values):
         """Pass an array of values"""
-        loc = glGetUniformLocation(self.handle, name)
+        loc = self.getUniformLocation(name)
         arr = (c_float * (len(values) * 2))(*flatten(values))
         glUniform2fv(loc, len(values), arr)
 
     def uniform3fv(self, name, values):
         """Pass an array of values"""
-        loc = glGetUniformLocation(self.handle, name)
+        loc = self.getUniformLocation(name)
         arr = (c_float * (len(values) * 3))(*flatten(values))
         glUniform3fv(loc, len(values), arr)
 
     def uniform4fv(self, name, values):
         """Pass an array of values"""
-        loc = glGetUniformLocation(self.handle, name)
+        loc = self.getUniformLocation(name)
         arr = (c_float * (len(values) * 4))(*flatten(values))
         glUniform4fv(loc, len(values), arr)
 
@@ -251,12 +267,15 @@ class Shader(object):
 
     def bind_material_to_uniformf(self, matprop, uniform):
         self.uniform_bindings[matprop] = (uniform, float)
+        self.getUniformLocation(uniform)
 
     def bind_material_to_uniformi(self, matprop, uniform):
         self.uniform_bindings[matprop] = (uniform, int)
+        self.getUniformLocation(uniform)
 
     def bind_material_to_texture(self, matprop, uniform):
         self.texture_bindings[matprop] = uniform
+        self.getUniformLocation(uniform)
 
 
 class ShaderGroup(Group):
@@ -305,7 +324,7 @@ def clamp(v, low, high):
 
 class MaterialGroup(Group):
     def __init__(self, material, parent=None):
-        self.material = material
+        self.material = self.prepare_material(material)
         super(MaterialGroup, self).__init__(parent=parent)
 
     def prepare_material(self, material):
@@ -320,7 +339,7 @@ class MaterialGroup(Group):
     def set_state(self):
         super(MaterialGroup, self).set_state()
         if activeshader:
-            activeshader.set_material(self.prepare_material(self.material))
+            activeshader.set_material(self.material)
 
     def unset_state(self):
         if activeshader:
