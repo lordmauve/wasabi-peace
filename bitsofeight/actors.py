@@ -1,11 +1,14 @@
 import math
+import random
 from math import pow, sin, degrees
 from pyglet.event import EventDispatcher
+from pyglet.resource import media
 from wasabisg.scenegraph import ModelNode, GroupNode
 from wasabisg.lighting import Light
 
 from euclid import Point3, Vector3, Quaternion
 
+from .sound import SoundPlayer
 from .models import (
     hull_model, mast_models, cannonball_model
 )
@@ -73,6 +76,8 @@ class InterpolatingController(object):
 
 class Cannonball(object):
     GRAVITY = Vector3(0, -1.0, 0)
+    HIT_SOUND = SoundPlayer('explode.mp3')
+    SPLASH_SOUND = SoundPlayer('watersplash.mp3')
 
     def __init__(self, pos, v, owner):
         self.model = ModelNode(cannonball_model)
@@ -91,6 +96,7 @@ class Cannonball(object):
                 continue
             hit = line.collide_body(o.body)
             if hit:
+                self.HIT_SOUND.play(hit)
                 spawn_splinters(hit, self.v)
                 self.world.destroy(self)
                 o.dispatch_event('on_hit', self.owner, hit)
@@ -105,6 +111,7 @@ class Cannonball(object):
 
         if self.pos.y < 0:
             self.world.destroy(self)
+            self.SPLASH_SOUND.play(self.pos, volume=0.5)
         else:
             self.model.pos = self.pos
 
@@ -148,6 +155,9 @@ class Ship(EventDispatcher, Positionable):
 
     MODELS = mast_models
 
+    SINKING_SOUND = media('bubble1.mp3', streaming=False)
+    CANNON_SOUND = media('cannon2.mp3', streaming=False)
+
     def __init__(self, pos=Point3(0, 0, 0), angle=0, max_health=2):
         super(Ship, self).__init__(pos)
         self.model = GroupNode([
@@ -161,7 +171,7 @@ class Ship(EventDispatcher, Positionable):
 
         self.angle = angle
         self.helm = InterpolatingController(0)
-        self.sail = InterpolatingController(1)  # amount of sail we have up
+        self.sail = InterpolatingController(2)  # amount of sail we have up
         self.roll = 0.0
         self.t = 0
         self.last_broadside = 'port'
@@ -211,14 +221,36 @@ class Ship(EventDispatcher, Positionable):
             side = 'port' if self.last_broadside == 'starboard' else 'starboard'
 #            print "Haven't fired to", side, "for a while"
 
-        m = self.get_matrix()
-        for pos, v in self.GUNS[side]:
-            wvec = m * v
-            wpos = m * pos
-            self.world.spawn(Cannonball(wpos, wvec, owner=self))
-            spawn_smoke(wpos, wvec)
-        self.world.spawn(MuzzleFlash(wpos))
+        # Fire one gun now, schedule the rest to fire over the next 0.5s
+        guns = range(len(self.GUNS[side]))
+        random.shuffle(guns)
+        num = guns.pop()
+        wpos = self.fire_gun(side, num)
+
+        for num in guns:
+            self.world.clock.schedule_once(
+                lambda dt, num: self.fire_gun(side, num),
+                random.uniform(0.0, 0.5),
+                num
+            )
         self.last_broadside = side
+        self.world.spawn(MuzzleFlash(wpos))
+
+    def fire_gun(self, side, num):
+        pos, v = self.GUNS[side][num]
+        m = self.get_matrix()
+        v += Vector3(
+            0.0,
+            random.normalvariate(0.0, 0.2),
+            random.normalvariate(0.0, 0.2)
+        )
+        wvec = m * v
+        wpos = m * pos
+        p = self.CANNON_SOUND.play()
+        p.position = wpos
+        self.world.spawn(Cannonball(wpos, wvec, owner=self))
+        spawn_smoke(wpos, wvec)
+        return wpos
 
     def update_masts(self, sail):
         hull, foremast, mainmast, mizzenmast = self.model.nodes
@@ -257,6 +289,8 @@ class Ship(EventDispatcher, Positionable):
 
     def kill(self):
         if self.alive:
+            p = self.SINKING_SOUND.play()
+            p.position = self.pos
             self.alive = False
             self.helm.set_immediate(0)
             self.sail.set_immediate(0)

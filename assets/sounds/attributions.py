@@ -44,4 +44,14 @@ ATTRIBUTIONS = {
         'owner': '',
         'source': '',
     },
+    'explode': {
+        'title': '2 High Quality Explosions',
+        'owner': 'Michel Baradari',
+        'source': 'http://opengameart.org/content/2-high-quality-explosions'
+    },
+    'watersplash': {
+        'title': 'Water Splash (Yo Frankie!)',
+        'owner': 'Blender Foundation',
+        'source': 'http://opengameart.org/content/water-splash-yo-frankie'
+    }
 }

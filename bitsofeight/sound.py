@@ -1,6 +1,6 @@
 from itertools import cycle
 
-from pyglet.media import Player
+from pyglet.media import Player, ManagedSoundPlayer
 from pyglet.resource import media, ResourceNotFoundException
 
 
@@ -49,3 +49,12 @@ class Sound(object):
         self.__dict__[event] = lambda *args: self.play_sound(sound)
         self.__dict__[event].__name__ = event
         event_handler.push_handlers(self.__dict__[event])
+
+
+class SoundPlayer(object):
+    def __init__(self, sound):
+        self.sound = media(sound, streaming=False)
+
+    def play(self, pos, volume=1.0):
+        p = self.sound.play()
+        p.pos = pos
