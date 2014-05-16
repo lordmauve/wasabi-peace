@@ -53,8 +53,7 @@ class World(EventDispatcher):
             pos=Point3(10, 5, 10),
             look_at=Point3(0, 1, 0),
             width=WIDTH,
-            height=HEIGHT,
-            fov=90
+            height=HEIGHT
         )
         self.t = 0.0
         self.clock = pyglet.clock.Clock(time_function=self.time)
@@ -122,12 +121,12 @@ class World(EventDispatcher):
         # Sun
         self.scene.add(Sunlight(
             direction=Vector3(0.82, 0.31, 0.48),
-            colour=(1.0, 0.8, 0.5, 1.0),
+            colour=(1.0, 0.85, 0.6, 1.0),
             intensity=1,
         ))
 
         # Sky dome
-        self.skydome = ModelNode(skydome)
+        self.skydome = ModelNode(skydome, rotation=(59, 0, 1, 0))
         self.scene.add(self.skydome)
 
         # Sea
@@ -165,14 +164,16 @@ class ChaseCamera(object):
     def update(self, dt):
         self.camera.look_at = self.ship.pos + Vector3(0, 2, 0)
         m = self.ship.get_matrix()
-        self.camera.pos = m * Point3(0, 5, -10)
+        if self.ship.alive:
+            self.camera.pos = m * Point3(0, 6, -14)
 
 
 class SideCamera(ChaseCamera):
     def update(self, dt):
         self.camera.look_at = self.ship.pos + Vector3(0, 3, 0)
         m = self.ship.get_matrix()
-        self.camera.pos = m * Point3(8, 3, 0)
+        if self.ship.alive:
+            self.camera.pos = m * Point3(8, 3, 0)
 
 
 class IsometricCamera(object):
