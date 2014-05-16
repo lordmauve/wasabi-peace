@@ -36,7 +36,7 @@ from .physics import Physics
 from .sea import sea_shader, SeaNode
 from .server import serve
 
-SERVER_HOST = '127.0.0.1'
+SERVER_HOST = '0.0.0.0'
 SERVER_PORT = 9000
 
 WIDTH = 1024
