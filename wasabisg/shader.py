@@ -43,9 +43,10 @@ def get_white_texture():
 class Shader(object):
     # vert, frag and geom take arrays of source strings
     # the arrays will be concattenated into one string by OpenGL
-    def __init__(self, vert='', frag='', geom='', reserved_textures=0):
+    def __init__(self, vert='', frag='', geom='', reserved_textures=0, name=''):
         self.uniform_bindings = {}
         self.texture_bindings = {}
+        self.name = name
 
         # Number of texture units not used for material maps
         self.reserved_textures = reserved_textures
@@ -67,6 +68,9 @@ class Shader(object):
 
         # attempt to link the program
         self.link()
+
+    def __repr__(self):
+        return '<Shader %s>' % self.name
 
     def createShader(self, strings, type):
         count = len(strings)

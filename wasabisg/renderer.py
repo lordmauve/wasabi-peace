@@ -195,10 +195,25 @@ class LightingPass(object):
 
     def render(self, camera, objects):
         lights = [o for o in objects if isinstance(o, BaseLight)]
-
         glPushAttrib(GL_ALL_ATTRIB_BITS)
-        #fbo = self.get_fbo(camera.viewport)
+        glClear(GL_DEPTH_BUFFER_BIT)
 
+        standard_objects = [
+            o for o in objects if not o.is_transparent() or hasattr(o, 'shader')
+        ]
+        self.render_objects(camera, lights, standard_objects, shader=lighting_shader)
+
+        for o in objects:
+            if not o.is_transparent() and hasattr(o, 'shader'):
+                self.render_objects(camera, lights, [o], shader=o.shader)
+
+        glPopAttrib()
+
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+
+    def render_objects(self, camera, lights, objects, shader=lighting_shader):
+        lights = lights[:]
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
         glBlendFunc(GL_SRC_ALPHA, GL_ZERO)
@@ -214,45 +229,39 @@ class LightingPass(object):
         glDepthMask(GL_TRUE)
 
         #glBindFramebuffer(GL_FRAMEBUFFER, fbo)
-        glClear(GL_DEPTH_BUFFER_BIT)
         if not lights:
             return
-        lighting_shader.bind()
-        lighting_shader.uniformf('ambient', *self.ambient)
+
+        shader.bind()
+        shader.uniformf('ambient', *self.ambient)
 
         while lights:
             ls = lights[:8]
             lights = lights[8:]
 
-            lighting_shader.uniform4fv('colours', [l.colour for l in ls])
-            lighting_shader.uniform4fv('positions',
+            shader.uniform4fv('colours', [l.colour for l in ls])
+            shader.uniform4fv('positions',
                 self.transform_lights(camera, ls)
             )
-            lighting_shader.uniform1fv(
+            shader.uniform1fv(
                 'intensities', [l.intensity for l in ls])
-            lighting_shader.uniform1fv(
+            shader.uniform1fv(
                 'falloffs', [l.falloff for l in ls])
-            lighting_shader.uniformi('num_lights', len(ls))
+            shader.uniformi('num_lights', len(ls))
             for o in objects:
-                if o.is_transparent():
-                    continue
                 o.draw(camera)
 
             # Subsequent passes are drawn without writing to the z-buffer
             glDisable(GL_POLYGON_OFFSET_FILL)
             glDepthMask(GL_FALSE)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE)
-            lighting_shader.uniformf('ambient', 0, 0, 0, 0)
+            shader.uniformf('ambient', 0, 0, 0, 0)
 
-        lighting_shader.unbind()
+        shader.unbind()
         glDepthMask(GL_TRUE)
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        glPopAttrib()
-
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LEQUAL)
 
     def __del__(self):
         if self.fbo:

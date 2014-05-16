@@ -32,6 +32,7 @@ from .keys import KeyControls
 from .actors import Ship
 from .particles import particles
 from .physics import Physics
+from .sea import sea_shader, SeaNode
 
 
 WIDTH = 1024
@@ -119,7 +120,8 @@ class World(EventDispatcher):
         self.scene.add(self.skydome)
 
         # Sea
-        self.sea = ModelNode(sea_model)
+        self.sea = SeaNode(sea_model)
+        self.sea.shader = sea_shader
         self.scene.add(self.sea)
 
     def spawn_ships(self):

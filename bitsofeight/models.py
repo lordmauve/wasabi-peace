@@ -4,6 +4,8 @@ from wasabisg.model import Material, Model, Mesh
 from wasabisg.plane import Plane
 from wasabisg.sphere import Sphere
 
+from .sea import sea_shader
+
 
 model_loader = ObjFileLoader()
 hull_model = model_loader.load_obj('assets/models/hull.obj')
@@ -20,7 +22,7 @@ sea_model = Model(meshes=[
             Kd=(0.2, 0.4, 0.6),
             Ks=(1.0, 1.0, 1.0, 1.0),
             Ns=30.0,
-            illum=1
+            illum=1,
         )
     )
 ])
