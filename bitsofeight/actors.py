@@ -237,11 +237,12 @@ class Ship(Positionable):
             mizzenmast.model_instance = self.MODELS[8]
 
     def kill(self):
-        self.alive = False
-        self.helm.set_immediate(0)
-        self.sail.set_immediate(0)
-        self.world.clock.schedule_once(
-            lambda dt: self.world.destroy(self), 7.0)
+        if self.alive:
+            self.alive = False
+            self.helm.set_immediate(0)
+            self.sail.set_immediate(0)
+            self.world.clock.schedule_once(
+                lambda dt: self.world.destroy(self), 7.0)
 
     def update(self, dt):
         self.t += dt
