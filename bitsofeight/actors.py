@@ -1,5 +1,6 @@
 import math
 from math import pow, sin, degrees
+from pyglet.event import EventDispatcher
 from wasabisg.scenegraph import ModelNode, GroupNode
 from wasabisg.lighting import Light
 
@@ -90,10 +91,14 @@ class Cannonball(object):
                 continue
             hit = line.collide_body(o.body)
             if hit:
-                print "Hit at", hit
-                o.kill()
                 spawn_splinters(hit, self.v)
                 self.world.destroy(self)
+                o.dispatch_event('on_hit', self.owner, hit)
+                killed = o.damage()
+                if killed:
+                    self.owner.dispatch_event('on_kill', o)
+                else:
+                    self.owner.dispatch_event('on_enemy_hit', o, hit)
                 return
 
         self.pos += s
@@ -121,7 +126,7 @@ class MuzzleFlash(object):
         self.model.intensity *= pow(0.01, dt)
 
 
-class Ship(Positionable):
+class Ship(EventDispatcher, Positionable):
     # Y up, -z forward
     GUNS = {
         'port': [
@@ -143,7 +148,7 @@ class Ship(Positionable):
 
     MODELS = mast_models
 
-    def __init__(self, pos=Point3(0, 0, 0), angle=0):
+    def __init__(self, pos=Point3(0, 0, 0), angle=0, max_health=2):
         super(Ship, self).__init__(pos)
         self.model = GroupNode([
             ModelNode(hull_model),
@@ -161,6 +166,8 @@ class Ship(Positionable):
         self.t = 0
         self.last_broadside = 'port'
         self.alive = True
+
+        self.health = self.max_health = max_health
 
     def get_targets(self, lookahead=10, range=30):
         """Get a dictionary of potential targets on either side.
@@ -236,6 +243,18 @@ class Ship(Positionable):
         else:
             mizzenmast.model_instance = self.MODELS[8]
 
+    def damage(self, amount=1):
+        """Apply damage to this ship.
+
+        Return True if the ship was killed as a result.
+
+        """
+        self.health -= amount
+        if self.health <= 0:
+            self.kill()
+            return True
+        return False
+
     def kill(self):
         if self.alive:
             self.alive = False
@@ -243,6 +262,7 @@ class Ship(Positionable):
             self.sail.set_immediate(0)
             self.world.clock.schedule_once(
                 lambda dt: self.world.destroy(self), 7.0)
+            self.dispatch_event('on_death')
 
     def update(self, dt):
         self.t += dt
@@ -303,3 +323,19 @@ class Ship(Positionable):
             for sail in self.model.nodes[1:]:
                 sail.rotation = degrees(sail_angle), 0, 1, 0
 
+
+# Triggered when this ship is killed
+# Args: none
+Ship.register_event_type('on_death')
+
+# Triggered when this ship is shot by an enemy
+# Args: attacking ship, hit position
+Ship.register_event_type('on_hit')
+
+# Triggered when this ship has shot an enemy
+# Args: ship we shot, hit position
+Ship.register_event_type('on_enemy_hit')
+
+# This ship has killed an enemy
+# Args: ship we killed
+Ship.register_event_type('on_kill')

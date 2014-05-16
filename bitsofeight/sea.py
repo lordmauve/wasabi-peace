@@ -193,7 +193,7 @@ void main (void) {
 
     float dist = length(pos);
 
-    vec3 n = normalize(normal + (0.2 / pow(1.0 + dist / 50.0, 2.0)) * get_normal_offset(wpos));
+    vec3 n = normalize(normal + (0.2 / pow(1.0 + dist / 80.0, 3.0)) * get_normal_offset(wpos));
     vec3 colour = vec3(0, 0, 0);
     vec3 basecolour = diffuse_colour;
 
