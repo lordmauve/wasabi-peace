@@ -211,7 +211,7 @@ class BattleMode(object):
 
     def on_order(self, o):
         if self.scroll:
-            self.hud.remove_scroll(self.scroll)
+            self.clear_order()
             pyglet.clock.unschedule(self.clear_order)
         self.scroll = (
             self.hud.create_scroll(o.get_message(self.ship), 130, 30),
