@@ -191,7 +191,9 @@ void main (void) {
 
     vec3 wpos = vec3(uv.x * 1000.0, 0.0, uv.y * 1000.0) - camerapos;
 
-    vec3 n = normalize(normal + 0.1 * get_normal_offset(wpos));
+    float dist = length(pos);
+
+    vec3 n = normalize(normal + (0.2 / pow(1.0 + dist / 50.0, 2.0)) * get_normal_offset(wpos));
     vec3 colour = vec3(0, 0, 0);
     vec3 basecolour = diffuse_colour;
 
