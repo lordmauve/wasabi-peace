@@ -109,6 +109,9 @@ class HUD(object):
     def create_scroll(self, text, x, y):
         return Scroll(text, (x, y), self.batch)
 
+    def remove_scroll(self, scroll):
+        scroll.delete()
+
     def create_sprite(self, name, x, y):
         return Sprite(self.sprites[name], x, y, batch=self.batch)
 

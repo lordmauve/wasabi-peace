@@ -78,7 +78,7 @@ class OrdersQueue(EventDispatcher):
     Some orders may be contradictory; this class should sort them out.
 
     """
-    INTERVAL = 2
+    INTERVAL = 0.5
 
     def __init__(self, ship):
         self.queue = deque()
