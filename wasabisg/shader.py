@@ -175,7 +175,10 @@ class Shader(object):
         """
         assert len(vals) in range(1, 5)
         f = self.UNIFORMFS[len(vals)]
-        loc = self.getUniformLocation(name)
+        if name not in self.locations:
+            self.locations[name] = loc = glGetUniformLocation(self.handle, name)
+        else:
+            loc = self.locations[name]
         f(loc, *vals)
 
     def uniformi(self, name, *vals):
@@ -184,9 +187,11 @@ class Shader(object):
         This program must be currently bound.
         """
         assert len(vals) in range(1, 5)
-        assert len(vals) in range(1, 5)
         f = self.UNIFORMIS[len(vals)]
-        loc = self.getUniformLocation(name)
+        if name not in self.locations:
+            self.locations[name] = loc = glGetUniformLocation(self.handle, name)
+        else:
+            loc = self.locations[name]
         f(loc, *vals)
 
     # upload a uniform matrix
@@ -200,28 +205,41 @@ class Shader(object):
 
     def uniform1fv(self, name, values):
         """Pass an array of values"""
-        loc = self.getUniformLocation(name)
+        if name not in self.locations:
+            self.locations[name] = loc = glGetUniformLocation(self.handle, name)
+        else:
+            loc = self.locations[name]
         l = len(values)
         arr = (c_float * l)(*values)
         glUniform1fv(loc, l, arr)
 
     def uniform2fv(self, name, values):
         """Pass an array of values"""
-        loc = self.getUniformLocation(name)
-        arr = (c_float * (len(values) * 2))(*flatten(values))
+        if name not in self.locations:
+            self.locations[name] = loc = glGetUniformLocation(self.handle, name)
+        else:
+            loc = self.locations[name]
+        arr = (c_float * (len(values) * 2))(*(f for v in values for f in v))
         glUniform2fv(loc, len(values), arr)
 
     def uniform3fv(self, name, values):
         """Pass an array of values"""
-        loc = self.getUniformLocation(name)
-        arr = (c_float * (len(values) * 3))(*flatten(values))
+        if name not in self.locations:
+            self.locations[name] = loc = glGetUniformLocation(self.handle, name)
+        else:
+            loc = self.locations[name]
+        arr = (c_float * (len(values) * 3))(*(f for v in values for f in v))
         glUniform3fv(loc, len(values), arr)
 
     def uniform4fv(self, name, values):
         """Pass an array of values"""
-        loc = self.getUniformLocation(name)
-        arr = (c_float * (len(values) * 4))(*flatten(values))
-        glUniform4fv(loc, len(values), arr)
+        if name not in self.locations:
+            self.locations[name] = loc = glGetUniformLocation(self.handle, name)
+        else:
+            loc = self.locations[name]
+        l = len(values)
+        arr = (c_float * (l * 4))(*(f for v in values for f in v))
+        glUniform4fv(loc, l, arr)
 
     def set_material(self, material):
         """Read uniform properties from the given material."""
