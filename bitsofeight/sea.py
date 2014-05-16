@@ -214,9 +214,9 @@ class SeaNode(ModelNode):
     def update(self, dt):
         self.t += dt
 
-    def draw(self, camera):
+    def draw_inner(self, camera):
         self.t += 0.02
         if shader.activeshader == self.shader:
             self.shader.uniformf('t', self.t)
             self.shader.uniformf('camerapos', *self.pos)
-        super(SeaNode, self).draw(camera)
+        super(SeaNode, self).draw_inner(camera)

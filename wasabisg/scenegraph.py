@@ -59,6 +59,10 @@ class ModelNode(object):
         self.rotation = rotation
         self.group = group
         self.transparent = transparent
+        if group:
+            self.draw = self.draw_with_group
+        else:
+            self.draw = self.draw_inner
 
     def update(self, dt):
         self.model_instance.update(dt)
@@ -66,16 +70,17 @@ class ModelNode(object):
     def is_transparent(self):
         return self.transparent
 
-    def draw(self, camera):
-        if self.group:
-            self.group.set_state_recursive()
+    def draw_with_group(self, camera):
+        self.group.set_state_recursive()
+        self.draw_inner(camera)
+        self.group.unset_state_recursive()
+
+    def draw_inner(self, camera):
         glPushMatrix()
         glTranslatef(*self.pos)
         glRotatef(*self.rotation)
         self.model_instance.draw()
         glPopMatrix()
-        if self.group:
-            self.group.unset_state_recursive()
 
 
 class GroupNode(object):
@@ -89,6 +94,10 @@ class GroupNode(object):
         self.pos = pos
         self.rotation = rotation
         self.group = group
+        if group:
+            self.draw = self.draw_with_group
+        else:
+            self.draw = self.draw_inner
 
     def update(self, dt):
         for n in self.nodes:
@@ -97,17 +106,18 @@ class GroupNode(object):
     def is_transparent(self):
         return False
 
-    def draw(self, camera):
-        if self.group:
-            self.group.set_state_recursive()
+    def draw_with_group(self, camera):
+        self.group.set_state_recursive()
+        self.draw_inner(camera)
+        self.group.unset_state_recursive()
+
+    def draw_inner(self, camera):
         glPushMatrix()
         glTranslatef(*self.pos)
         glRotatef(*self.rotation)
         for n in self.nodes:
             n.draw(camera)
         glPopMatrix()
-        if self.group:
-            self.group.unset_state_recursive()
 
 
 class RayNode(object):
