@@ -1,5 +1,5 @@
 import random
-from collections import deque
+import Queue
 from pyglet.event import EventDispatcher
 
 
@@ -81,14 +81,14 @@ class OrdersQueue(EventDispatcher):
     INTERVAL = 0.5
 
     def __init__(self, ship):
-        self.queue = deque()
+        self.queue = Queue.Queue()
         self.ship = ship
         self.wait = 0
 
     def put(self, order):
         # TODO: work out how this order might supercede other orders
         # already in the queue.
-        self.queue.append(order)
+        self.queue.put(order)
 
     def update(self, dt):
         if self.wait > 0:
@@ -96,10 +96,13 @@ class OrdersQueue(EventDispatcher):
             if self.wait <= 0:
                 self.dispatch_event('on_ready_for_orders')
         elif self.queue:
-            o = self.queue.popleft()
-            self.dispatch_event('on_order', o)
-            o.act(self.ship)
-            self.wait = self.INTERVAL
+            try:
+                o = self.queue.get_nowait()
+                self.dispatch_event('on_order', o)
+                o.act(self.ship)
+                self.wait = self.INTERVAL
+            except Queue.Empty:
+                pass
 
 OrdersQueue.register_event_type('on_order')
 OrdersQueue.register_event_type('on_ready_for_orders')
