@@ -11,9 +11,13 @@ from ws4py.websocket import WebSocket
 from ws4py.server.wsgirefserver import WSGIServer, WebSocketWSGIRequestHandler
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
 
+from ..orders import OrderProcessor
+
+
 TEMPLATE_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 orders_queue = None
+order_processor = OrderProcessor()
 
 
 def not_found(environ, start_response):
@@ -64,10 +68,22 @@ class GameWebSocket(WebSocket):
     def received_message(self, message):
         global orders_queue
         command = message.data
-        #orders_queue.put(command)
+        self.process_command(command)
 
         response = "Command sent: %s" % command
         self.send(response, False)
+
+    def process_command(self, command):
+        cmd_map = {
+            'turn_left': order_processor.turn_left,
+            'turn_right': order_processor.turn_right,
+            'speed_up': order_processor.speed_up,
+            'slow_down': order_processor.slow_down,
+        }
+        cmd = cmd_map.get(command)
+        if cmd:
+            order = cmd(order_processor.LIGHT)
+            orders_queue.put(order)
 
 
 websocket_application = WebSocketWSGIApplication(handler_cls=GameWebSocket)
@@ -92,4 +108,5 @@ def serve(host, port, orders_q):
 
 
 if __name__ == '__main__':
-    serve('127.0.0.1', 9000)
+    import Queue
+    serve('127.0.0.1', 9000, Queue.Queue())
