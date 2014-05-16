@@ -106,3 +106,43 @@ class OrdersQueue(EventDispatcher):
 
 OrdersQueue.register_event_type('on_order')
 OrdersQueue.register_event_type('on_ready_for_orders')
+
+
+class OrderProcessor(object):
+    """Process events from Web interface, and turn them into orders."""
+    # Maximum Key press durations for different strength actions
+    LIGHT = 0.2
+    MEDIUM = 0.5
+
+    def get_strength(self, held):
+        if held < self.LIGHT:
+            return 1
+        elif held < self.MEDIUM:
+            return 2
+        else:
+            return 3
+
+    def turn_left(self, held):
+        return ShipOrderHelm('port', self.get_strength(held))
+
+    def turn_right(self, held):
+        return ShipOrderHelm('starboard', self.get_strength(held))
+
+    def speed_up(self, held):
+        s = self.get_strength(held)
+        if s == 1:
+            o = ShipOrderHelm('port', 0)
+        else:
+            o = ShipOrderAccelerate(s - 1)
+        return o
+
+    def slow_down(self, held):
+        s = self.get_strength(held)
+        if s == 1:
+            o = ShipOrderHelm('port', 0)
+        else:
+            o = ShipOrderDecelerate(s - 1)
+        return o
+
+    def fire(self, held):
+        return ShipOrderFire()
