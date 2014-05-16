@@ -99,6 +99,9 @@ class World(EventDispatcher):
         """Update the world through the given time step (in seconds)."""
         self.t += dt
         self.clock.tick()
+        pyglet.media.listener.position = self.camera.pos
+        pyglet.media.listener.forward_orientation = self.camera.eye_vector()
+
         for e in self.emitters:
             e.update()
         particles.update(dt)
