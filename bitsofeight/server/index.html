@@ -2,10 +2,12 @@
 <html>
   <head>
     <script>
-      var websocket = new WebSocket('ws://localhost:9000/ws');
+      var websocket = new WebSocket('ws://' + window.location.host + '/ws');
       websocket.onopen    = function (evt) {
-            console.log("Connected to WebSocket server.");
-            websocket.send("Hello Echo!");
+            msg = "Connected to game server."
+            console.log(msg);
+            document.getElementById('msg').innerHTML = msg;
+            websocket.send("Hello!");
       };
       websocket.onclose   = function (evt) { console.log("Disconnected"); };
       websocket.onmessage = function (evt) { document.getElementById('msg').innerHTML = evt.data; };
@@ -13,7 +15,13 @@
     </script>
   </head>
   <body>
-    <h1>Websocket demo</h1>
-    Message: <span id="msg" />
+    <h1>Bits o'Eight</h1>
+    <form>
+        <button type="button" onclick="websocket.send('turn_left');"><< Turn Left</button><br>
+        <button type="button" onclick="websocket.send('turn_right');">Turn Right >></button><br>
+        <button type="button" onclick="websocket.send('speed_up');">Speed Up</button><br>
+        <button type="button" onclick="websocket.send('slow_down');">Slow Down</button><br>
+    </form>
+    Console: <span id="msg">Connecting to server...</span>
   </body>
 </html>
