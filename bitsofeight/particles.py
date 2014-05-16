@@ -155,7 +155,8 @@ class WakeEmitter(object):
 
     def stop(self):
         """Unbind all emitters from their groups"""
-        wake_particles.unbind_controller(*self.emitters)
+        for e in self.emitters:
+            wake_particles.unbind_controller(e)
 
     def update(self):
         """Update the emitters."""

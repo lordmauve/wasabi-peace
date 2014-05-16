@@ -1,11 +1,9 @@
 import math
-from math import pow, sin, cos
+from math import pow, sin, degrees
 from wasabisg.scenegraph import ModelNode, GroupNode
-from wasabisg.model import Material, Model, Mesh
 from wasabisg.lighting import Light
-from wasabisg.sphere import Sphere as SphereMesh
 
-from euclid import Point3, Vector3, Quaternion, Matrix4
+from euclid import Point3, Vector3, Quaternion
 
 from .models import (
     hull_model, mast_models, cannonball_model
@@ -39,12 +37,10 @@ class LinearInterpolation(Interpolation):
 
 class CosineInterpolation(Interpolation):
     hpi = math.pi * 0.5
-    sin = math.sin  # Don't know why it's called cosine interpolation, sin^2
-                    # is easier
 
     def interpolate(self, t):
-        sin = self.sin(t * self.hpi)
-        return sin * sin
+        s = sin(t * self.hpi)
+        return s * s
 
 
 class InterpolatingController(object):
@@ -57,6 +53,10 @@ class InterpolatingController(object):
 
     def set(self, v):
         self.interpolation = self.interpolater(self.current, v, self.response_time)
+
+    def set_immediate(self, v):
+        self.interpolation = None
+        self.current = v
 
     @property
     def target(self):
@@ -91,6 +91,7 @@ class Cannonball(object):
             hit = line.collide_body(o.body)
             if hit:
                 print "Hit at", hit
+                o.kill()
                 spawn_splinters(hit, self.v)
                 self.world.destroy(self)
                 return
@@ -159,6 +160,7 @@ class Ship(Positionable):
         self.roll = 0.0
         self.t = 0
         self.last_broadside = 'port'
+        self.alive = True
 
     def get_targets(self, lookahead=10, range=30):
         """Get a dictionary of potential targets on either side.
@@ -234,20 +236,28 @@ class Ship(Positionable):
         else:
             mizzenmast.model_instance = self.MODELS[8]
 
+    def kill(self):
+        self.alive = False
+        self.helm.set_immediate(0)
+        self.sail.set_immediate(0)
+        self.world.clock.schedule_once(
+            lambda dt: self.world.destroy(self), 7.0)
+
     def update(self, dt):
         self.t += dt
 
-        self.helm.update(dt)
-        self.sail.update(dt)
+        if self.alive:
+            self.helm.update(dt)
+            self.sail.update(dt)
 
-        self.update_masts(self.sail.current)
+            self.update_masts(self.sail.current)
 
         # damp roll
         self.roll *= pow(0.6, dt)
 
         # Compute some bobbing motion
-        rollmoment = 0.05 * math.sin(self.t)
-        pitch = 0.02 * math.sin(0.31 * self.t)
+        rollmoment = 0.05 * sin(self.t)
+        pitch = 0.02 * sin(0.31 * self.t)
 
         # Compute the forward vector from the curent heading
         q = Quaternion.new_rotate_axis(self.angle, Vector3(0, 1, 0))
@@ -266,7 +276,13 @@ class Ship(Positionable):
         accel = forward * self.sail.current * sail_power * 0.5 * dt
         self.vel += accel
         self.vel *= pow(0.7, dt)  # Drag
-        self.pos += self.vel * dt + Vector3(0, -0.5, 0) * self.pos.y * dt
+        self.pos += self.vel * dt
+
+        # Float
+        if self.alive:
+            self.pos += Vector3(0, -0.5, 0) * self.pos.y * dt
+        else:
+            self.pos += Vector3(0, -1, 0) * dt
 
         self.roll += rollmoment * dt
 
@@ -277,11 +293,12 @@ class Ship(Positionable):
             Quaternion.new_rotate_axis(self.roll, Vector3(0, 0, 1))
         )
         rotangle, (rotx, roty, rotz) = self.rot.get_angle_axis()
-        self.model.rotation = (math.degrees(rotangle), rotx, roty, rotz)
+        self.model.rotation = (degrees(rotangle), rotx, roty, rotz)
         self.model.pos = self.pos
 
         # Adjust sail angle to wind direction
-        sail_angle = get_sail_setting(angle_to_wind)
-        for sail in self.model.nodes[1:]:
-            sail.rotation = math.degrees(sail_angle), 0, 1, 0
+        if self.alive:
+            sail_angle = get_sail_setting(angle_to_wind)
+            for sail in self.model.nodes[1:]:
+                sail.rotation = degrees(sail_angle), 0, 1, 0
 
