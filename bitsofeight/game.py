@@ -343,7 +343,7 @@ def main():
         com_thread.start()
 
         import socket
-        print "Please connect to http://%s:%d/ for the controls" % (
+        print "Please connect to http://%s:%d/ with a mobile browser (or desktop browser) for the controls" % (
             socket.gethostname(), SERVER_PORT
         )
 
