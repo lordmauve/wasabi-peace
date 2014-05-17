@@ -249,7 +249,14 @@ class BattleMode(object):
         if self.ship.world:
             send_msg(math.degrees(self.ship.get_wind_angle()))
 
+    KILL_SOUNDS = [
+        pyglet.resource.media('get_back_to_shore_you_landlubber.wav', streaming=False),
+        pyglet.resource.media('pass_me_greetings_to_davy_jones.wav', streaming=False),
+    ]
+
     def on_kill(self, *args):
+        sound = random.choice(self.KILL_SOUNDS)
+        sound.play()
         self.hud.add_booty(100)
 
     def on_order(self, o):

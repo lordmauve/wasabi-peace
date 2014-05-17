@@ -289,6 +289,8 @@ class Ship(EventDispatcher, Positionable):
         Return True if the ship was killed as a result.
 
         """
+        if not self.alive:
+            return False
         self.health -= amount
         if self.health <= 0:
             self.kill()
