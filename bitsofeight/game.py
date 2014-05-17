@@ -46,6 +46,8 @@ HEIGHT = 600
 
 FPS = 60
 
+tau = 2 * math.pi
+
 
 class World(EventDispatcher):
     def __init__(self):
@@ -144,20 +146,22 @@ class World(EventDispatcher):
         self.scene.add(self.sea)
 
     def spawn_ships(self):
-        tau = 2 * math.pi
         for i in range(5):
-            bearing = random.uniform(0, tau)
-            rng = random.uniform(50, 100)
-            x = rng * math.sin(bearing)
-            z = rng * math.cos(bearing)
+            self.spawn_one_ship()
 
-            angle = random.uniform(0, tau)
-            s = Ship(
-                pos=Point3(x, 0, z),
-                angle=angle
-            )
-            self.spawn(s)
-            ShipAI(s).start()
+    def spawn_one_ship(self):
+        bearing = random.uniform(0, tau)
+        rng = random.uniform(50, 100)
+        x = rng * math.sin(bearing)
+        z = rng * math.cos(bearing)
+
+        angle = random.uniform(0, tau)
+        s = Ship(
+            pos=Point3(x, 0, z),
+            angle=angle
+        )
+        self.spawn(s)
+        ShipAI(s).start()
 
     def draw(self):
         x, _, z = self.camera.pos
@@ -258,6 +262,7 @@ class BattleMode(object):
         sound = random.choice(self.KILL_SOUNDS)
         sound.play()
         self.hud.add_booty(100)
+        self.world.spawn_one_ship()
 
     def on_order(self, o):
         if self.scroll:
@@ -354,13 +359,17 @@ class Game(object):
         self.gamestate.draw()
 
 
+ipaddr = None
+
 def get_ip_address():
+    global ipaddr
     import socket
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(('8.8.8.8', 80))
-    ip = s.getsockname()[0]
-    s.close()
-    return ip
+    if not ipaddr:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ipaddr = s.getsockname()[0]
+        s.close()
+    return ipaddr
 
 
 def main():
