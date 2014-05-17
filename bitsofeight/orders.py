@@ -122,27 +122,26 @@ class OrderProcessor(object):
         else:
             return 3
 
-    def turn_left(self, held):
-        return ShipOrderHelm('port', self.get_strength(held))
+    def turn_left(self):
+        return ShipOrderHelm('port', 2)
 
-    def turn_right(self, held):
-        return ShipOrderHelm('starboard', self.get_strength(held))
+    def hard_left(self):
+        return ShipOrderHelm('port', 3)
 
-    def speed_up(self, held):
-        s = self.get_strength(held)
-        if s == 1:
-            o = ShipOrderHelm('port', 0)
-        else:
-            o = ShipOrderAccelerate(s - 1)
-        return o
+    def turn_right(self):
+        return ShipOrderHelm('starboard', 2)
 
-    def slow_down(self, held):
-        s = self.get_strength(held)
-        if s == 1:
-            o = ShipOrderHelm('port', 0)
-        else:
-            o = ShipOrderDecelerate(s - 1)
-        return o
+    def hard_right(self):
+        return ShipOrderHelm('starboard', 3)
 
-    def fire(self, held):
+    def centre(self):
+        return ShipOrderHelm('starboard', 0)
+
+    def speed_up(self):
+        return ShipOrderAccelerate(1)
+
+    def slow_down(self):
+        return ShipOrderDecelerate(1)
+
+    def fire(self):
         return ShipOrderFire()

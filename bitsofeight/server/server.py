@@ -3,6 +3,7 @@ __author__ = 'arnavkhare'
 import re
 import os
 
+from Queue import Queue
 from ws4py import configure_logger
 configure_logger()
 
@@ -55,6 +56,31 @@ def index(environ, start_response):
     return [render_from_template('index.html')]
 
 
+import os.path
+from mimetypes import guess_type
+
+BASE = ['assets', 'web']
+
+
+def serve(environ, start_response):
+    """Server the main HTML page"""
+    path = environ.get('PATH_INFO', '')
+    file_parts = re.sub('^/assets/', '', path).split('/')
+    local_path = os.path.join(*(BASE + file_parts))
+    try:
+        contents = open(local_path, 'r').read()
+    except (IOError, OSError):
+        start_response('404 Not Found', [('Content-Type', 'text/html')])
+        return ['<h1>File not found</h1>']
+
+    type, encoding = guess_type(path)
+    type = type or 'application/octet-stream'
+    if encoding:
+        type += '; charset=' + encoding
+    start_response('200 OK', [('Content-Type', type)])
+    return [contents]
+
+
 class EchoWebSocket(WebSocket):
     def received_message(self, message):
         """
@@ -64,7 +90,16 @@ class EchoWebSocket(WebSocket):
         self.send(message.data, message.is_binary)
 
 
+socket = None
+
+import json
+
+
 class GameWebSocket(WebSocket):
+    def opened(self):
+        global socket
+        socket = self
+
     def received_message(self, message):
         global orders_queue
         command = message.data
@@ -73,16 +108,15 @@ class GameWebSocket(WebSocket):
         response = "Command sent: %s" % command
         self.send(response, False)
 
+    def closed(self, *args):
+        global socket
+        socket = None
+        print "Lost connection to client."
+
     def process_command(self, command):
-        cmd_map = {
-            'turn_left': order_processor.turn_left,
-            'turn_right': order_processor.turn_right,
-            'speed_up': order_processor.speed_up,
-            'slow_down': order_processor.slow_down,
-        }
-        cmd = cmd_map.get(command)
+        cmd = getattr(order_processor, command, None)
         if cmd:
-            order = cmd(order_processor.LIGHT)
+            order = cmd()
             orders_queue.put(order)
 
 
@@ -91,6 +125,7 @@ websocket_application = WebSocketWSGIApplication(handler_cls=GameWebSocket)
 # map urls to functions
 urls = [
     (r'^$', index),
+    (r'^assets/(.*)$', serve),
     (r'^ws$', websocket_application),
 ]
 
@@ -105,6 +140,11 @@ def serve(host, port, orders_q):
                          app=application)
     server.initialize_websockets_manager()
     server.serve_forever()
+
+
+def send_msg(msg):
+    if socket:
+        socket.send(json.dumps(msg))
 
 
 if __name__ == '__main__':
