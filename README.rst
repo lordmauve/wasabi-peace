@@ -19,7 +19,7 @@ Installing the game from source
 Make a virtualenv, and checkout the project source code::
 
     mkdir bitsofeight
-    virtuelenv bitsofeight
+    virtualenv bitsofeight
     cd bitsofeight
     source bin/activate
     hg clone https://bitbucket.org/lordmauve/wasabi-peace src
