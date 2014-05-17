@@ -56,6 +56,8 @@ class ShipOrderAccelerate(object):
         u'Give me every scrap of sail!',
     ]
 
+    SOUND = media('more_sail.wav', streaming=False)
+
     def __init__(self, strength):
         assert 0 <= strength <= 3
         self.strength = strength
@@ -64,6 +66,10 @@ class ShipOrderAccelerate(object):
         return self.messages[self.strength].format(self=self)
 
     def act(self, ship):
+        try:
+            self.SOUND.play()
+        except MediaException:
+            pass
         ship.sail.set(min(3, ship.sail.target + 1))
 
 
@@ -102,7 +108,13 @@ class ShipOrderDecelerate(ShipOrderAccelerate):
         u"All stop!"
     ]
 
+    SOUND = media('ease_off_the_mainsl.wav', streaming=False)
+
     def act(self, ship):
+        try:
+            self.SOUND.play()
+        except MediaException:
+            pass
         ship.sail.set(max(0, ship.sail.target - 1))
 
 
