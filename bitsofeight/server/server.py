@@ -11,7 +11,13 @@ from ws4py.websocket import WebSocket
 from ws4py.server.wsgirefserver import WSGIServer, WebSocketWSGIRequestHandler
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
 
+from ..orders import OrderProcessor
+
+
 TEMPLATE_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+orders_queue = None
+order_processor = OrderProcessor()
 
 
 def not_found(environ, start_response):
@@ -57,7 +63,30 @@ class EchoWebSocket(WebSocket):
         """
         self.send(message.data, message.is_binary)
 
-websocket_application = WebSocketWSGIApplication(handler_cls=EchoWebSocket)
+
+class GameWebSocket(WebSocket):
+    def received_message(self, message):
+        global orders_queue
+        command = message.data
+        self.process_command(command)
+
+        response = "Command sent: %s" % command
+        self.send(response, False)
+
+    def process_command(self, command):
+        cmd_map = {
+            'turn_left': order_processor.turn_left,
+            'turn_right': order_processor.turn_right,
+            'speed_up': order_processor.speed_up,
+            'slow_down': order_processor.slow_down,
+        }
+        cmd = cmd_map.get(command)
+        if cmd:
+            order = cmd(order_processor.LIGHT)
+            orders_queue.put(order)
+
+
+websocket_application = WebSocketWSGIApplication(handler_cls=GameWebSocket)
 
 # map urls to functions
 urls = [
@@ -66,8 +95,18 @@ urls = [
 ]
 
 
-server = make_server('127.0.0.1', 9000, server_class=WSGIServer,
-                     handler_class=WebSocketWSGIRequestHandler,
-                     app=application)
-server.initialize_websockets_manager()
-server.serve_forever()
+def serve(host, port, orders_q):
+    global orders_queue
+    orders_queue = orders_q
+
+    # start server
+    server = make_server(host, port, server_class=WSGIServer,
+                         handler_class=WebSocketWSGIRequestHandler,
+                         app=application)
+    server.initialize_websockets_manager()
+    server.serve_forever()
+
+
+if __name__ == '__main__':
+    import Queue
+    serve('127.0.0.1', 9000, Queue.Queue())
