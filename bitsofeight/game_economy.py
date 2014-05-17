@@ -65,7 +65,7 @@ class GameEvents(object):
 
     def build_cannon(self):
         # only in base!
-        if self.res['cannon']['amount'] < 10:
+        if self.res['cannon']['amount'] < 8:  # turns out pirate ships were mainly good at being fast
             self.res['iron']['amount'] -= 50
             self.res['wood']['amount'] -= 10
             # TODO - dispatch "tink tink" building sound
@@ -90,4 +90,8 @@ class GameEvents(object):
         self.res['gold']['amount'] -= 1
         self.res['iron']['amount'] += 1
 
-
+    def buy_shot(self):
+        # TODO - dispatch coins sound
+        # shot is relatively cheap (it's smaller)
+        self.res['gold']['amount'] -= 1
+        self.res['shot']['amount'] += 2
