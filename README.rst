@@ -13,10 +13,10 @@ Download and install Pyglet 1.2 Alpha1 from the `Pyglet download page`_
 
 : _Pyglet download page: https://code.google.com/p/pyglet/downloads/list
 
-Installing the game from sorce
-------------------------------
+Installing the game from source
+-------------------------------
 
-Make a virtualenv, and checkout the project source code:
+Make a virtualenv, and checkout the project source code::
 
     mkdir bitsofeight
     virtuelenv bitsofeight
