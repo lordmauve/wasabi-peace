@@ -301,13 +301,19 @@ class BattleMode(object):
             msg = "Please connect to http://%s:%d/ with a browser or smartphone" % (
                 get_ip_address(), SERVER_PORT
             )
-            self.connect_message = self.hud.create_scroll(msg, 150, 300)
+            self.connect_message = (
+                self.hud.create_sprite('logo', 10, HEIGHT - 287),
+                self.hud.create_scroll(msg, 145, 100),
+            )
         self.started = False
 
     def on_connect(self):
         if self.started:
             return
-        self.connect_message.delete()
+        if self.connect_message:
+            sprite, scroll = self.connect_message
+            sprite.delete()
+            scroll.delete()
         self.connect_message = None
         self.started = True
 
