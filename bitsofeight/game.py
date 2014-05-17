@@ -217,6 +217,9 @@ class BattleMode(object):
         self.ship = Ship(max_health=5)
         self.ship.faction = 0
         self.world.spawn(self.ship)
+        self.ship.push_handlers(
+            self.on_kill
+        )
 
         # Uncomment this to give the player ship AI, eg for testing
         # ShipAI(self.ship, debug=True).start()
@@ -245,6 +248,9 @@ class BattleMode(object):
     def send_data(self, dt):
         if self.ship.world:
             send_msg(math.degrees(self.ship.get_wind_angle()))
+
+    def on_kill(self, *args):
+        self.hud.add_booty(100)
 
     def on_order(self, o):
         if self.scroll:

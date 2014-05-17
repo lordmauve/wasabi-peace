@@ -90,10 +90,10 @@ class Scroll(object):
         self.bg.delete()
 
 
-
 class HUD(object):
     SPRITES = {
         'captain': 'captain.png',
+        'booty': 'booty.png'
     }
 
     def __init__(self, width, height):
@@ -101,6 +101,23 @@ class HUD(object):
         self.height = height
         self.batch = Batch()
         self.load_sprites()
+
+        self.booty_sprite = self.create_sprite('booty', self.width - 50, 15)
+        self.booty = 0
+        self.booty_score = Label(
+            '0',
+            font_name=FONT_NAME,
+            font_size=28,
+            color=(205, 175, 2, 0xff),
+            x=self.width - 60,
+            y=20,
+            anchor_x='right',
+            batch=self.batch
+        )
+
+    def add_booty(self, v):
+        self.booty += v
+        self.booty_score.text = str(self.booty)
 
     def load_sprites(self):
         load = pyglet.resource.image
