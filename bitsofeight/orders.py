@@ -1,6 +1,8 @@
 import random
 import Queue
 from pyglet.event import EventDispatcher
+from pyglet.resource import media
+from pyglet.media import MediaException
 
 
 class ShipOrderHelm(object):
@@ -10,6 +12,20 @@ class ShipOrderHelm(object):
         u'Turn to {self.direction}!',
         u'Hard ta {self.direction}!'
     ]
+
+    SOUNDS = {
+        'centre': media('rudder_amidships.wav', streaming=False),
+        'port': [
+            media('a_little_to_port.wav', streaming=False),
+            media('turn_to_port.wav', streaming=False),
+            media('hard_to_port.wav', streaming=False),
+        ],
+        'starboard': [
+            media('a_little_to_starboard.wav', streaming=False),
+            media('turn_to_starboard.wav', streaming=False),
+            media('hard_to_starboard.wav', streaming=False),
+        ],
+    }
 
     def __init__(self, direction, strength):
         assert direction in ('port', 'starboard')
@@ -21,6 +37,14 @@ class ShipOrderHelm(object):
         return self.messages[abs(self.strength)].format(self=self)
 
     def act(self, ship):
+        if self.strength == 0:
+            sound = self.SOUNDS['centre']
+        else:
+            sound = self.SOUNDS[self.direction][abs(self.strength) - 1]
+        try:
+            sound.play()
+        except MediaException:
+            pass
         ship.helm.set(self.strength)
 
 
@@ -32,6 +56,8 @@ class ShipOrderAccelerate(object):
         u'Give me every scrap of sail!',
     ]
 
+    SOUND = media('more_sail.wav', streaming=False)
+
     def __init__(self, strength):
         assert 0 <= strength <= 3
         self.strength = strength
@@ -40,6 +66,10 @@ class ShipOrderAccelerate(object):
         return self.messages[self.strength].format(self=self)
 
     def act(self, ship):
+        try:
+            self.SOUND.play()
+        except MediaException:
+            pass
         ship.sail.set(min(3, ship.sail.target + 1))
 
 
@@ -50,13 +80,23 @@ class ShipOrderFire(object):
         u"Give 'em a full broadside!",
     ]
 
+    SOUNDS = [
+        media('let_em_have_it.wav', streaming=False),
+        media('fire.wav', streaming=False),
+        media('give_em_full_broadside.wav', streaming=False),
+    ]
+
     def __init__(self):
-        self.message = random.choice(self.messages)
+        self.message, self.sound = random.choice(zip(self.messages, self.SOUNDS))
 
     def get_message(self, ship):
         return self.message
 
     def act(self, ship):
+        try:
+            self.sound.play()
+        except MediaException:
+            pass
         ship.fire()
 
 
@@ -68,7 +108,13 @@ class ShipOrderDecelerate(ShipOrderAccelerate):
         u"All stop!"
     ]
 
+    SOUND = media('ease_off_the_mainsl.wav', streaming=False)
+
     def act(self, ship):
+        try:
+            self.SOUND.play()
+        except MediaException:
+            pass
         ship.sail.set(max(0, ship.sail.target - 1))
 
 
