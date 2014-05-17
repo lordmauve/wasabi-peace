@@ -19,7 +19,7 @@ Installing the game from source
 Make a virtualenv, and checkout the project source code::
 
     mkdir bitsofeight
-    virtuelenv bitsofeight
+    virtualenv bitsofeight
     cd bitsofeight
     source bin/activate
     hg clone https://bitbucket.org/lordmauve/wasabi-peace src
@@ -28,9 +28,6 @@ Now you can use pip to build the project::
 
     pip install -e src
 
-Installing the game from PyPi
------------------------------
-
-TODO: Need to publish something before we write this
+Currently, the game only supports Linux.
 
 
