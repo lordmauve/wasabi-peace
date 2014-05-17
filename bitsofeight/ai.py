@@ -211,6 +211,7 @@ class Strategy(object):
         except Exception:
             import traceback
             traceback.print_exc()
+            self.stop()
 
     def update(self, dt):
         """Strategies must implement this."""

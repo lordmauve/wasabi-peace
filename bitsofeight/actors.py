@@ -313,6 +313,9 @@ class Ship(EventDispatcher, Positionable):
         """Get the starboard unit vector."""
         return self.get_quaternion() * Vector3(-1.0, 0, 0)
 
+    def get_wind_angle(self):
+        return map_angle(self.world.wind_angle - self.angle)
+
     def update(self, dt):
         self.t += dt
 
@@ -333,7 +336,7 @@ class Ship(EventDispatcher, Positionable):
         q = self.get_quaternion()
         forward = q * Vector3(0, 0, 1)
         angular_velocity = self.helm.current * min(forward.dot(self.vel), 2) * 0.02
-        angle_to_wind = self.world.wind_angle - self.angle
+        angle_to_wind = map_angle(self.world.wind_angle - self.angle)
         sail_power = get_sail_power(angle_to_wind)
         heeling_moment = get_heeling_moment(angle_to_wind)
 

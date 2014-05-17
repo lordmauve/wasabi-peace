@@ -35,7 +35,7 @@ from .particles import particles
 from .physics import Physics
 from .sea import sea_shader, SeaNode
 from .ai import ShipAI
-from .server import serve
+from .server import serve, send_msg
 
 SERVER_HOST = '0.0.0.0'
 SERVER_PORT = 9000
@@ -223,7 +223,7 @@ class BattleMode(object):
         self.orders_queue = OrdersQueue(self.ship)
         self.orders_queue.push_handlers(self.on_order)
         self.scroll = 0
-        self.keys = KeyControls(self.orders_queue)
+        #self.keys = KeyControls(self.orders_queue)
 
         self.camera_controller = ChaseCamera(self.world.camera, self.ship)
         #self.camera_controller = OverheadCamera(self.world.camera, self.ship)
@@ -233,6 +233,12 @@ class BattleMode(object):
 	self.t = 0
         self.music = Music(['battletrack.mp3'])
         self.sounds = Sound(['cannon1.mp3', 'cannon2.mp3'])
+
+        pyglet.clock.schedule_interval(self.send_data, 0.05)
+
+    def send_data(self, dt):
+        if self.ship.world:
+            send_msg(math.degrees(self.ship.get_wind_angle()))
 
     def on_order(self, o):
         if self.scroll:
@@ -254,8 +260,7 @@ class BattleMode(object):
     def start(self):
         pyglet.clock.schedule_interval(self.update, 1.0 / FPS)
 
-        self.keys.push_handlers(self.window)
-        #self.sounds.sound_on_event('cannon2.mp3', self.window, 'on_mouse_press')
+        #self.keys.push_handlers(self.window)
         self.world.spawn_ships()
         self.music.play()
 
@@ -268,7 +273,7 @@ class BattleMode(object):
         self.hud.draw()
 
     def update(self, dt):
-        self.keys.update(dt)
+        #self.keys.update(dt)
         self.orders_queue.update(dt)
         self.world.update(dt)
         self.camera_controller.update(dt)
@@ -336,6 +341,11 @@ def main():
                         args=(SERVER_HOST, SERVER_PORT, game.gamestate.orders_queue))
         com_thread.daemon = True
         com_thread.start()
+
+        import socket
+        print "Please connect to http://%s:%d/ for the controls" % (
+            socket.gethostname(), SERVER_PORT
+        )
 
         pyglet.app.run()
 

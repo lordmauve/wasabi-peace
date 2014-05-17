@@ -1,27 +1,142 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <script src="/assets/jquery.js"></script>
     <script>
-      var websocket = new WebSocket('ws://' + window.location.host + '/ws');
-      websocket.onopen    = function (evt) {
-            msg = "Connected to game server."
-            console.log(msg);
-            document.getElementById('msg').innerHTML = msg;
-            websocket.send("Hello!");
-      };
-      websocket.onclose   = function (evt) { console.log("Disconnected"); };
-      websocket.onmessage = function (evt) { document.getElementById('msg').innerHTML = evt.data; };
-      websocket.onerror   = function (evt) { console.log('Error occured: ' + evt.data); };
+
+jQuery(function () {
+    function status(msg) {
+        document.getElementById('msg').innerHTML = msg;
+    }
+
+    var reconnect_timer = setTimeout(connect, 500);
+    var websocket;
+
+    function connect() {
+        websocket = new WebSocket('ws://' + window.location.host + '/ws');
+        websocket.onopen = function (evt) {
+            status("Connected to game server.");
+            $('#controls').removeClass('disconnected');
+        };
+        websocket.onclose = function (evt) {
+            $('#controls').addClass('disconnected');
+            status("Disconnected");
+            clearTimeout(reconnect_timer);
+            reconnect_timer = setTimeout(connect, 500);
+        };
+        websocket.onmessage = function (evt) {
+            var o = -parseFloat(evt.data); //JSON.parse(evt.data);
+            $('#needle').css({
+                transform: 'rotate(' + o + 'deg)'
+            });
+
+        };
+        websocket.onerror   = function (evt) {
+            status('Error occured: ' + evt.data);
+            clearTimeout(reconnect_timer);
+            reconnect_timer = setTimeout(connect, 500);
+        };
+    }
+
+    $('img').each(function () {
+        var command = $(this).attr('data-command');
+        if (command) {
+            $(this).click(function () {
+                websocket.send(command);
+            });
+        }
+    });
+
+});
     </script>
+<style>
+h1 {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+}
+
+#left img {
+    float: left;
+    clear: left;
+    margin: 10px;
+}
+
+#right img {
+    float: right;
+    clear: right;
+    margin: 10px;
+}
+
+#left {
+    position: absolute;
+    left: 0;
+    bottom: 50px;
+}
+
+#right {
+    position: absolute;
+    right: 0;
+    bottom: 50px;
+}
+
+#sail {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+}
+
+#wind {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 130px;
+    width: 93px;
+    margin: 0 auto;
+    height: 197px;
+    background: url('/assets/wind-angle-bg.png') no-repeat;
+}
+
+#needle {
+    position: absolute;
+    left: 33px;
+    top: 20px;
+}
+
+#controls.disconnected {
+    opacity: 0.5;
+}
+</style>
   </head>
   <body>
-    <h1>Bits o'Eight</h1>
-    <form>
-        <button type="button" onclick="websocket.send('turn_left');"><< Turn Left</button><br>
-        <button type="button" onclick="websocket.send('turn_right');">Turn Right >></button><br>
-        <button type="button" onclick="websocket.send('speed_up');">Speed Up</button><br>
-        <button type="button" onclick="websocket.send('slow_down');">Slow Down</button><br>
-    </form>
-    Console: <span id="msg">Connecting to server...</span>
+  <h1><img src="/assets/logo.png" alt="Bits o'Eight" /></h1>
+
+<div id="controls" class="disconnected">
+<div id="left">
+    <img src="/assets/centre-rudder.png" data-command="centre" />
+    <img src="/assets/port.png" data-command="turn_left" />
+    <img src="/assets/hard-to-port.png" data-command="hard_left" />
+</div>
+
+<div id="sail">
+    <img src="/assets/more-sail.png" data-command="speed_up" />
+    <img src="/assets/less-sail.png" data-command="slow_down" />
+</div>
+
+<div id="right">
+    <img src="/assets/fire-guns.png" data-command="fire" />
+    <img src="/assets/starboard.png" data-command="turn_right" />
+    <img src="/assets/hard-to-starboard.png" data-command="hard_right" />
+</div>
+
+<div id="wind">
+    <img id="needle" src="/assets/wind-angle-needle.png" />
+</div>
+</div>
+
+<p>Console: <span id="msg">Connecting to server...</span></p>
   </body>
 </html>
