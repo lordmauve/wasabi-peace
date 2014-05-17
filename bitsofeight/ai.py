@@ -32,7 +32,7 @@ class ShipAI(object):
         self.target_point = None
 
         # Aggressive ships will target anything in range
-        self.aggressive = random.randint(0, 1)
+        self.aggressive = 1  #random.randint(0, 1)
         self.debug = debug
 
     def think(self, msg, *args):
