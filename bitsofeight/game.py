@@ -236,7 +236,9 @@ class BattleMode(object):
         self.music = Music(['battletrack.mp3'])
         self.sounds = Sound(['cannon1.mp3', 'cannon2.mp3'])
 
+        self.connect_message = None
         self.started = False
+        self.on_disconnect()
 
         pyglet.clock.schedule_interval(self.send_data, 0.05)
 
@@ -276,6 +278,21 @@ class BattleMode(object):
         self.world.draw()
         self.hud.draw()
 
+    def on_disconnect(self):
+        if not self.connect_message:
+            msg = "Please connect to http://%s:%d/ with a browser or smartphone" % (
+                get_ip_address(), SERVER_PORT
+            )
+            self.connect_message = self.hud.create_scroll(msg, 150, 300)
+        self.started = False
+
+    def on_connect(self):
+        if self.started:
+            return
+        self.connect_message.delete()
+        self.connect_message = None
+        self.started = True
+
     def update(self, dt):
         #self.keys.update(dt)
         try:
@@ -284,9 +301,9 @@ class BattleMode(object):
             pass
         else:
             if msg == 'connected':
-                self.started = True
+                self.on_connect()
             elif msg == 'disconnected':
-                self.started = False
+                self.on_disconnect()
 
         if self.started:
             self.orders_queue.update(dt)
