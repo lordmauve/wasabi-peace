@@ -93,7 +93,8 @@ class Scroll(object):
 class HUD(object):
     SPRITES = {
         'captain': 'captain.png',
-        'booty': 'booty.png'
+        'booty': 'booty.png',
+        'logo': 'logo.png'
     }
 
     def __init__(self, width, height):
