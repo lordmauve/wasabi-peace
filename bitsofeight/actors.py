@@ -57,6 +57,8 @@ class InterpolatingController(object):
         self.interpolation = None
 
     def set(self, v):
+        if self.interpolation and self.interpolation.tov == v:
+            return
         self.interpolation = self.interpolater(self.current, v, self.response_time)
 
     def set_immediate(self, v):

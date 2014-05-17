@@ -309,6 +309,15 @@ class Game(object):
         self.gamestate.draw()
 
 
+def get_ip_address():
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(('8.8.8.8', 80))
+    ip = s.getsockname()[0]
+    s.close()
+    return ip
+
+
 def main():
     from optparse import OptionParser
     parser = OptionParser('%prog [-f]')
@@ -342,9 +351,8 @@ def main():
         com_thread.daemon = True
         com_thread.start()
 
-        import socket
         print "Please connect to http://%s:%d/ with a mobile browser (or desktop browser) for the controls" % (
-            socket.gethostname(), SERVER_PORT
+            get_ip_address(), SERVER_PORT
         )
 
         pyglet.app.run()
