@@ -230,7 +230,7 @@ class BattleMode(object):
 
         self.hud = HUD(WIDTH, HEIGHT)
 
-	self.t = 0
+        self.t = 0
         self.music = Music(['battletrack.mp3'])
         self.sounds = Sound(['cannon1.mp3', 'cannon2.mp3'])
 
@@ -336,9 +336,9 @@ def main():
         pr.print_stats('cumulative')
     else:
         # start the command websockets server in the background
-        com_thread = threading.Thread(
-                        target=serve,
-                        args=(SERVER_HOST, SERVER_PORT, game.gamestate.orders_queue))
+        com_thread = threading.Thread(target=serve,
+                                      args=(SERVER_HOST, SERVER_PORT, game.gamestate.orders_queue)
+                                      )
         com_thread.daemon = True
         com_thread.start()
 
