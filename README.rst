@@ -28,9 +28,6 @@ Now you can use pip to build the project::
 
     pip install -e src
 
-Installing the game from PyPi
------------------------------
-
-TODO: Need to publish something before we write this
+Currently, the game only supports Linux.
 
 
