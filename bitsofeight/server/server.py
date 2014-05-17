@@ -99,6 +99,7 @@ class GameWebSocket(WebSocket):
     def opened(self):
         global socket
         socket = self
+        system_queue.put('connected')
 
     def received_message(self, message):
         global orders_queue
@@ -112,6 +113,7 @@ class GameWebSocket(WebSocket):
         global socket
         socket = None
         print "Lost connection to client."
+        system_queue.put('disconnected')
 
     def process_command(self, command):
         cmd = getattr(order_processor, command, None)
@@ -130,9 +132,10 @@ urls = [
 ]
 
 
-def serve(host, port, orders_q):
-    global orders_queue
+def serve(host, port, orders_q, system_q):
+    global orders_queue, system_queue
     orders_queue = orders_q
+    system_queue = system_q
 
     # start server
     server = make_server(host, port, server_class=WSGIServer,

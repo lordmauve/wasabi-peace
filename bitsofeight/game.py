@@ -10,6 +10,7 @@ import posixpath
 
 from wasabisg.scenegraph import Camera, Scene, ModelNode
 from wasabisg.lighting import Sunlight, Light
+from Queue import Queue, Empty
 
 
 # Configure loader before importing any game assets
@@ -220,6 +221,7 @@ class BattleMode(object):
         # Uncomment this to give the player ship AI, eg for testing
         # ShipAI(self.ship, debug=True).start()
 
+        self.system_queue = Queue()
         self.orders_queue = OrdersQueue(self.ship)
         self.orders_queue.push_handlers(self.on_order)
         self.scroll = 0
@@ -233,6 +235,8 @@ class BattleMode(object):
         self.t = 0
         self.music = Music(['battletrack.mp3'])
         self.sounds = Sound(['cannon1.mp3', 'cannon2.mp3'])
+
+        self.started = False
 
         pyglet.clock.schedule_interval(self.send_data, 0.05)
 
@@ -274,10 +278,21 @@ class BattleMode(object):
 
     def update(self, dt):
         #self.keys.update(dt)
-        self.orders_queue.update(dt)
-        self.world.update(dt)
-        self.camera_controller.update(dt)
-        self.t += dt
+        try:
+            msg = self.system_queue.get_nowait()
+        except Empty:
+            pass
+        else:
+            if msg == 'connected':
+                self.started = True
+            elif msg == 'disconnected':
+                self.started = False
+
+        if self.started:
+            self.orders_queue.update(dt)
+            self.world.update(dt)
+            self.camera_controller.update(dt)
+            self.t += dt
 
 
 class Game(object):
@@ -346,7 +361,7 @@ def main():
     else:
         # start the command websockets server in the background
         com_thread = threading.Thread(target=serve,
-                                      args=(SERVER_HOST, SERVER_PORT, game.gamestate.orders_queue)
+                                      args=(SERVER_HOST, SERVER_PORT, game.gamestate.orders_queue, game.gamestate.system_queue)
                                       )
         com_thread.daemon = True
         com_thread.start()
