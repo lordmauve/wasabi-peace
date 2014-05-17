@@ -57,6 +57,8 @@ class ShipAI(object):
 
     def stop(self):
         self.clock.unschedule(self.consider_strategy)
+        if self.strategy:
+            self.strategy.stop()
 
     def fire(self):
         if self.ready_to_fire:
