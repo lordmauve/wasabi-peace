@@ -248,6 +248,9 @@ class Ship(EventDispatcher, Positionable):
             random.normalvariate(0.0, 0.2)
         )
         wvec = m * v
+
+        up = Vector3(0, 1, 0)
+        wvec -= up * 0.5 * wvec.dot(up)
         wpos = m * pos
         p = self.CANNON_SOUND.play()
         p.position = wpos
@@ -335,7 +338,7 @@ class Ship(EventDispatcher, Positionable):
         # Compute the forward vector from the curent heading
         q = self.get_quaternion()
         forward = q * Vector3(0, 0, 1)
-        angular_velocity = self.helm.current * min(forward.dot(self.vel), 2) * 0.02
+        angular_velocity = self.helm.current * min(forward.dot(self.vel), 2) * 0.03
         angle_to_wind = map_angle(self.world.wind_angle - self.angle)
         sail_power = get_sail_power(angle_to_wind)
         heeling_moment = get_heeling_moment(angle_to_wind)
