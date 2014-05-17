@@ -15,6 +15,7 @@ from .models import (
 from .physics import Positionable, Sphere, Body, LineSegment
 from .particles import WakeEmitter, spawn_smoke, spawn_splinters
 from .sailing import get_sail_power, get_heeling_moment, get_sail_setting
+from .utils import map_angle
 
 
 class Interpolation(object):
@@ -158,7 +159,9 @@ class Ship(EventDispatcher, Positionable):
     SINKING_SOUND = media('bubble1.mp3', streaming=False)
     CANNON_SOUND = media('cannon2.mp3', streaming=False)
 
-    def __init__(self, pos=Point3(0, 0, 0), angle=0, max_health=2):
+    faction = 1
+
+    def __init__(self, pos=Point3(0, 0, 0), angle=0, max_health=3):
         super(Ship, self).__init__(pos)
         self.model = GroupNode([
             ModelNode(hull_model),
@@ -298,6 +301,18 @@ class Ship(EventDispatcher, Positionable):
                 lambda dt: self.world.destroy(self), 7.0)
             self.dispatch_event('on_death')
 
+    def get_quaternion(self):
+        """Get the Quarternion of the ship's current heading."""
+        return Quaternion.new_rotate_axis(self.angle, Vector3(0, 1, 0))
+
+    def get_forward(self):
+        """Get the forward unit vector."""
+        return self.get_quaternion() * Vector3(0, 0, 1)
+
+    def get_starboard(self):
+        """Get the starboard unit vector."""
+        return self.get_quaternion() * Vector3(-1.0, 0, 0)
+
     def update(self, dt):
         self.t += dt
 
@@ -315,9 +330,8 @@ class Ship(EventDispatcher, Positionable):
         pitch = 0.02 * sin(0.31 * self.t)
 
         # Compute the forward vector from the curent heading
-        q = Quaternion.new_rotate_axis(self.angle, Vector3(0, 1, 0))
+        q = self.get_quaternion()
         forward = q * Vector3(0, 0, 1)
-
         angular_velocity = self.helm.current * min(forward.dot(self.vel), 2) * 0.02
         angle_to_wind = self.world.wind_angle - self.angle
         sail_power = get_sail_power(angle_to_wind)
@@ -327,7 +341,7 @@ class Ship(EventDispatcher, Positionable):
         rollmoment -= heeling_moment * 0.05 * self.sail.current  # heel from wind force
 
         # Update ship angle and position
-        self.angle += angular_velocity * dt
+        self.angle = map_angle(self.angle + angular_velocity * dt)
         accel = forward * self.sail.current * sail_power * 0.5 * dt
         self.vel += accel
         self.vel *= pow(0.7, dt)  # Drag

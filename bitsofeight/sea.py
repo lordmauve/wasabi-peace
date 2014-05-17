@@ -211,11 +211,19 @@ void main (void) {
 
 class SeaNode(ModelNode):
     t = 0
+    delta = 0.02
+
     def update(self, dt):
         self.t += dt
 
     def draw_inner(self, camera):
-        self.t += 0.02
+        self.t += self.delta
+        if self.t >= 30.0:
+            self.t = 30.0
+            self.delta = -0.02
+        elif self.t <= -30.0:
+            self.t = -30.0
+            self.delta = 0.02
         if shader.activeshader == self.shader:
             self.shader.uniformf('t', self.t)
             self.shader.uniformf('camerapos', *self.pos)
