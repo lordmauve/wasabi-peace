@@ -191,6 +191,8 @@ class Ship(EventDispatcher, Positionable):
         lookahead units ahead or astern of us.
 
         """
+        if not self.world:
+            return []
         targets = {
             'port': [],
             'starboard': []
@@ -217,6 +219,8 @@ class Ship(EventDispatcher, Positionable):
         sides.
 
         """
+        if not self.alive:
+            return
         targets = self.get_targets()
 
         if bool(targets['port']) ^ bool(targets['starboard']):
