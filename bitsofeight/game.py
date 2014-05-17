@@ -34,6 +34,7 @@ from .actors import Ship
 from .particles import particles
 from .physics import Physics
 from .sea import sea_shader, SeaNode
+from .ai import ShipAI
 from .server import serve
 
 SERVER_HOST = '0.0.0.0'
@@ -155,6 +156,7 @@ class World(EventDispatcher):
                 angle=angle
             )
             self.spawn(s)
+            ShipAI(s).start()
 
     def draw(self):
         x, _, z = self.camera.pos
@@ -193,6 +195,17 @@ class IsometricCamera(object):
         self.camera.pos = self.ship.pos +  Vector3(10, 5, 10)
 
 
+class OverheadCamera(object):
+    """Overhead camera. Useful for AI testing."""
+    def __init__(self, camera, ship):
+        self.camera = camera
+        self.ship = ship
+
+    def update(self, dt):
+        self.camera.look_at = self.ship.pos
+        self.camera.pos = self.ship.pos +  Vector3(0, 80, 5)
+
+
 class BattleMode(object):
     """Sailing on the open ocean!"""
     def __init__(self, game):
@@ -200,15 +213,20 @@ class BattleMode(object):
         self.window = game.window
         self.world = World()
 
-        self.ship = Ship()
-        self.ship.speed = 0
+        self.ship = Ship(max_health=5)
+        self.ship.faction = 0
         self.world.spawn(self.ship)
+
+        # Uncomment this to give the player ship AI, eg for testing
+        # ShipAI(self.ship, debug=True).start()
+
         self.orders_queue = OrdersQueue(self.ship)
         self.orders_queue.push_handlers(self.on_order)
         self.scroll = 0
         self.keys = KeyControls(self.orders_queue)
 
         self.camera_controller = ChaseCamera(self.world.camera, self.ship)
+        #self.camera_controller = OverheadCamera(self.world.camera, self.ship)
 
         self.hud = HUD(WIDTH, HEIGHT)
 
